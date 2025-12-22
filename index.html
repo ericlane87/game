@@ -86,9 +86,9 @@
       min-width: 160px;
       height: 16px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.18);
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       box-shadow: 0 10px 20px var(--shadow);
     }
 
@@ -256,7 +256,7 @@
       moveSpeed: 240,
       score: 0,
       meter: 1,
-      meterDrain: 0.06,
+      meterDrain: 0.1,
       gravity: 1600,
       jumpPower: 640,
       time: 0,
@@ -462,7 +462,8 @@
       }
 
       obstacles.forEach((obs) => {
-        obs.x += obs.vx * obs.speed * dt;
+        const dir = obs.x > player.x ? -1 : 1;
+        obs.x += dir * obs.speed * dt;
       });
 
       const cleanupX = state.cameraX - 200;
