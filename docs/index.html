@@ -278,6 +278,10 @@
 
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     const isDesktop = !isTouch;
+    const voicePreference = {
+      name: "David"
+    };
+    let cachedVoice = null;
     if (isTouch) {
       document.body.classList.add("is-touch");
     }
@@ -456,9 +460,30 @@
       input.fireQueued = true;
     }
 
+    function selectVoice() {
+      const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+      if (!voices.length) return null;
+      if (cachedVoice && voices.includes(cachedVoice)) {
+        return cachedVoice;
+      }
+      const match = voices.find((voice) =>
+        voice.name && voice.name.toLowerCase().includes(voicePreference.name.toLowerCase())
+      );
+      cachedVoice = match || null;
+      return cachedVoice;
+    }
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        selectVoice();
+      };
+    }
+
     function speakYeah() {
       if (!("speechSynthesis" in window)) return;
       const utter = new SpeechSynthesisUtterance("yeah, yeah");
+      const voice = selectVoice();
+      if (voice) utter.voice = voice;
       utter.rate = 1.05;
       utter.pitch = 1.1;
       window.speechSynthesis.cancel();
@@ -468,6 +493,8 @@
     function speakGreenThing() {
       if (!("speechSynthesis" in window)) return;
       const utter = new SpeechSynthesisUtterance("Green Thing Time");
+      const voice = selectVoice();
+      if (voice) utter.voice = voice;
       utter.rate = 1.0;
       utter.pitch = 1.0;
       window.speechSynthesis.cancel();
