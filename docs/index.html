@@ -294,7 +294,7 @@
       player.h = isMobile ? 46 : 58;
       player.x = Math.max(player.x, 120);
       player.y = world.groundY - player.h;
-      state.jumpPower = isMobile ? 560 : 680;
+      state.jumpPower = isMobile ? 620 : 720;
       state.moveSpeed = isMobile ? 220 : 260;
     }
 
@@ -362,8 +362,8 @@
     function spawnObstacle() {
       const size = 28 + Math.random() * 10;
       const spawnX = Math.max(
-        state.cameraX + world.width + 120,
-        state.lastObstacleX + 220 + Math.random() * 200
+        state.cameraX + world.width + 180,
+        state.lastObstacleX + 280 + Math.random() * 240
       );
       const y = world.groundY - size;
       obstacles.push({
@@ -431,7 +431,7 @@
       state.time += dt;
       const moveDir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
       player.vx = moveDir * state.moveSpeed;
-      player.x = Math.max(40, player.x + player.vx * dt);
+      player.x = Math.max(state.cameraX + 40, player.x + player.vx * dt);
 
       if (player.x > state.distance) {
         state.distance = player.x;
@@ -443,7 +443,7 @@
         return;
       }
 
-      state.cameraX = Math.max(0, player.x - world.width * 0.3);
+      state.cameraX = Math.max(state.cameraX, player.x - world.width * 0.3);
 
       if (platforms.length < 8 && state.time - state.lastPlatform > 0.8) {
         spawnPlatform();
