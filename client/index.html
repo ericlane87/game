@@ -960,10 +960,14 @@
 
     canvas.addEventListener("pointerdown", () => {
       hasUserInteracted = true;
-      queueJump();
-      if (!state.spokenStart && state.running && !state.dead) {
-        speakYeah();
-        state.spokenStart = true;
+      if (isTouch) {
+        queueJump();
+        if (!state.spokenStart && state.running && !state.dead) {
+          speakYeah();
+          state.spokenStart = true;
+        }
+      } else {
+        queueFire();
       }
     });
 
