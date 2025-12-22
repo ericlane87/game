@@ -1402,13 +1402,11 @@
       }
     });
 
-    if (isDesktop) {
-      canvas.addEventListener("mousedown", (event) => {
-        if (event.button !== 0) return;
-        hasUserInteracted = true;
-        queueFire();
-      });
-    }
+    canvas.addEventListener("mousedown", (event) => {
+      if (event.button !== 0) return;
+      hasUserInteracted = true;
+      queueFire();
+    });
 
     if (fireBtn) {
       fireBtn.addEventListener("click", () => {
