@@ -277,7 +277,7 @@
     const restartBtn = document.getElementById("restart-btn");
 
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    const isDesktop = !isTouch && window.matchMedia("(pointer: fine)").matches;
+    const isDesktop = !isTouch;
     if (isTouch) {
       document.body.classList.add("is-touch");
     }
@@ -402,6 +402,9 @@
       state.initialDropTimer = 3;
       for (let i = 0; i < 4; i += 1) {
         spawnPlatform();
+      }
+      for (let i = 0; i < 3; i += 1) {
+        spawnObstacle();
       }
 
       if (hasUserInteracted) {
@@ -590,7 +593,7 @@
         state.lastPlatform = state.time;
       }
 
-      if (state.time - state.lastSpawn > 1.2 + Math.random() * 1.2) {
+      if (state.time - state.lastSpawn > 0.7 + Math.random() * 0.9) {
         spawnObstacle();
         state.lastSpawn = state.time;
       }
@@ -1167,7 +1170,7 @@
     });
 
     if (isDesktop) {
-      canvas.addEventListener("pointerdown", (event) => {
+      canvas.addEventListener("mousedown", (event) => {
         if (event.button !== 0) return;
         hasUserInteracted = true;
         queueFire();
