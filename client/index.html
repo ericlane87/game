@@ -412,11 +412,15 @@
     function die() {
       state.running = false;
       state.dead = true;
-      deathReason.textContent = state.deathCause === "meter"
+      const meterValue = Math.max(0, Math.min(100, state.meter));
+      const reasonText = state.deathCause === "meter"
         ? "Addiction meter drained."
         : state.deathCause === "win"
           ? "Level complete. You reached the trap house."
-          : "You got caught.";
+          : state.deathCause === "roach"
+            ? "You hit a roach."
+            : "You got caught.";
+      deathReason.textContent = `${reasonText} Meter: ${Math.round(meterValue)}%`;
       overlay.classList.remove("hidden");
     }
 
@@ -669,6 +673,7 @@
             player.vy = -state.jumpPower * 0.45;
             state.score += 10;
           } else {
+            state.deathCause = "roach";
             die();
             break;
           }
