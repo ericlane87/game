@@ -465,6 +465,15 @@
       window.speechSynthesis.speak(utter);
     }
 
+    function speakGreenThing() {
+      if (!("speechSynthesis" in window)) return;
+      const utter = new SpeechSynthesisUtterance("Green Thing Time");
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
     function handleJump() {
       if (state.dead || !state.running) {
         resetGame();
@@ -809,6 +818,7 @@
           plants.splice(i, 1);
           state.meter = 100;
           state.flameShots = 1;
+          speakGreenThing();
         }
       }
     }
