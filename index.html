@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Adventures of the Yeah, Yeah Man</title>
+  <style>
+    :root {
+      --ink: #0f0f14;
+      --cream: #f6f1e8;
+      --neon: #ffb200;
+      --heat: #ff5a4f;
+      --electric: #4ad9d9;
+      --shadow: rgba(10, 10, 18, 0.55);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 90, 79, 0.25), transparent 45%),
+        radial-gradient(circle at 80% 10%, rgba(74, 217, 217, 0.2), transparent 35%),
+        linear-gradient(140deg, #111018 0%, #231d2f 45%, #1b222e 100%);
+      color: var(--cream);
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    #stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    #hud .score {
+      font-size: 14px;
+      background: rgba(18, 16, 24, 0.75);
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #meter {
+      flex: 1;
+      max-width: 360px;
+      min-width: 160px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 20px var(--shadow);
+    }
+
+    #meter-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--neon), var(--heat));
+      transition: width 0.1s ease-out;
+    }
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(11, 10, 18, 0.5);
+      backdrop-filter: blur(6px);
+      text-align: center;
+      padding: 24px;
+    }
+
+    #overlay.hidden {
+      display: none;
+    }
+
+    #title {
+      font-family: "Impact", "Arial Black", sans-serif;
+      font-size: clamp(32px, 6vw, 72px);
+      margin: 0;
+      color: var(--neon);
+      text-shadow: 0 16px 30px var(--shadow);
+      letter-spacing: 0.04em;
+    }
+
+    #subtitle {
+      margin: 12px 0 0;
+      font-size: clamp(14px, 2.4vw, 20px);
+      max-width: 520px;
+      color: rgba(246, 241, 232, 0.85);
+    }
+
+    #controls {
+      margin-top: 22px;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    #touch-controls {
+      position: absolute;
+      inset: auto 16px 20px auto;
+      display: none;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    #touch-controls button {
+      font-family: inherit;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(18, 16, 24, 0.8);
+      color: var(--cream);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 14px 18px;
+      box-shadow: 0 12px 24px var(--shadow);
+    }
+
+    #touch-controls button:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .is-touch #touch-controls {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 700px) {
+      #hud {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      #hud .score {
+        width: 100%;
+        text-align: center;
+      }
+
+      #meter {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" aria-label="Stoop Runner"></canvas>
+
+    <div id="hud">
+      <div class="score">Score: <span id="score">0</span></div>
+      <div id="meter" aria-label="Addiction meter">
+        <div id="meter-fill"></div>
+      </div>
+      <div class="score">Addiction Meter</div>
+    </div>
+
+    <div id="overlay">
+      <div>
+        <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
+        <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
+        <div id="controls">Move with Arrow keys / A-D, jump with Space, or use touch buttons. Refresh or die to start over.</div>
+      </div>
+    </div>
+
+    <div id="touch-controls">
+      <button id="left-btn" type="button">Left</button>
+      <button id="jump-btn" type="button">Jump</button>
+      <button id="right-btn" type="button">Right</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const hudScore = document.getElementById("score");
+    const meterFill = document.getElementById("meter-fill");
+    const overlay = document.getElementById("overlay");
+    const jumpBtn = document.getElementById("jump-btn");
+    const leftBtn = document.getElementById("left-btn");
+    const rightBtn = document.getElementById("right-btn");
+
+    const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    if (isTouch) {
+      document.body.classList.add("is-touch");
+    }
+
+    const input = {
+      jumpQueued: false,
+      left: false,
+      right: false
+    };
+
+    const world = {
+      width: 0,
+      height: 0,
+      groundY: 0,
+      scale: 1
+    };
+
+    const player = {
+      x: 0,
+      y: 0,
+      w: 36,
+      h: 52,
+      vy: 0,
+      vx: 0,
+      jumpsLeft: 1,
+      color: "#f6f1e8"
+    };
+
+    const state = {
+      running: false,
+      dead: false,
+      moveSpeed: 240,
+      score: 0,
+      meter: 1,
+      meterDrain: 0.06,
+      gravity: 1600,
+      jumpPower: 640,
+      time: 0,
+      lastSpawn: 0,
+      lastCollectible: 0,
+      lastPlatform: 0,
+      lastObstacleX: 0,
+      lastCollectibleX: 0,
+      lastPlatformX: 0,
+      lastFrame: performance.now(),
+      distance: 0,
+      cameraX: 0,
+      collectMessageTimer: 0,
+      spokenStart: false
+    };
+
+    const obstacles = [];
+    const platforms = [];
+    const collectibles = [];
+    let hasUserInteracted = false;
+
+    function resize() {
+      const ratio = window.devicePixelRatio || 1;
+      world.width = window.innerWidth;
+      world.height = window.innerHeight;
+      world.groundY = world.height * 0.78;
+      world.scale = ratio;
+      canvas.width = world.width * ratio;
+      canvas.height = world.height * ratio;
+      canvas.style.width = `${world.width}px`;
+      canvas.style.height = `${world.height}px`;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      const isMobile = isTouch || world.width < 900;
+      player.w = isMobile ? 30 : 40;
+      player.h = isMobile ? 46 : 58;
+      player.x = Math.max(player.x, 120);
+      player.y = world.groundY - player.h;
+      state.jumpPower = isMobile ? 560 : 680;
+      state.moveSpeed = isMobile ? 220 : 260;
+    }
+
+    function resetGame() {
+      state.running = true;
+      state.dead = false;
+      state.score = 0;
+      state.meter = 1;
+      state.time = 0;
+      state.lastSpawn = 0;
+      state.lastCollectible = 0;
+      state.lastPlatform = 0;
+      state.lastObstacleX = 0;
+      state.lastCollectibleX = 0;
+      state.lastPlatformX = 0;
+      state.distance = 0;
+      state.cameraX = 0;
+      state.spokenStart = false;
+      obstacles.length = 0;
+      platforms.length = 0;
+      collectibles.length = 0;
+      player.x = 160;
+      player.y = world.groundY - player.h;
+      player.vy = 0;
+      player.vx = 0;
+      player.jumpsLeft = 1;
+      overlay.classList.add("hidden");
+
+      if (hasUserInteracted) {
+        speakYeah();
+        state.spokenStart = true;
+      }
+    }
+
+    function die() {
+      state.running = false;
+      state.dead = true;
+      overlay.classList.remove("hidden");
+    }
+
+    function queueJump() {
+      input.jumpQueued = true;
+    }
+
+    function speakYeah() {
+      if (!("speechSynthesis" in window)) return;
+      const utter = new SpeechSynthesisUtterance("yeah, yeah");
+      utter.rate = 1.05;
+      utter.pitch = 1.1;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    function handleJump() {
+      if (state.dead || !state.running) {
+        resetGame();
+        return;
+      }
+      if (player.jumpsLeft > 0) {
+        player.vy = -state.jumpPower;
+        player.jumpsLeft -= 1;
+      }
+    }
+
+    function spawnObstacle() {
+      const size = 28 + Math.random() * 10;
+      const spawnX = Math.max(
+        state.cameraX + world.width + 120,
+        state.lastObstacleX + 220 + Math.random() * 200
+      );
+      const onPlatform = platforms.length && Math.random() > 0.5;
+      let y = world.groundY - size;
+      if (onPlatform) {
+        const plat = platforms[Math.floor(Math.random() * platforms.length)];
+        y = plat.y - size;
+      }
+      obstacles.push({
+        x: spawnX,
+        y,
+        w: size * 1.2,
+        h: size,
+        type: "roach",
+        speed: 140 + state.distance * 0.04 + Math.random() * 40,
+        phase: Math.random() * Math.PI * 2
+      });
+      state.lastObstacleX = spawnX;
+    }
+
+    function spawnCollectible() {
+      const r = 10;
+      const spawnX = Math.max(
+        state.cameraX + world.width + 120,
+        state.lastCollectibleX + 200 + Math.random() * 180
+      );
+      const onPlatform = platforms.length && Math.random() > 0.3;
+      let y = world.groundY - 50 - Math.random() * 40;
+      if (onPlatform) {
+        const plat = platforms[Math.floor(Math.random() * platforms.length)];
+        y = plat.y - 24;
+      }
+      collectibles.push({
+        x: spawnX,
+        y,
+        r
+      });
+      state.lastCollectibleX = spawnX;
+    }
+
+    function spawnPlatform() {
+      const w = 140 + Math.random() * 140;
+      const h = 14;
+      const yOptions = [
+        world.groundY - 120,
+        world.groundY - 200,
+        world.groundY - 280
+      ];
+      const y = yOptions[Math.floor(Math.random() * yOptions.length)];
+      const spawnX = Math.max(
+        state.cameraX + world.width + 160,
+        state.lastPlatformX + 260 + Math.random() * 220
+      );
+      platforms.push({ x: spawnX, y, w, h });
+      state.lastPlatformX = spawnX;
+    }
+
+    function rectsOverlap(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+
+      state.time += dt;
+      const moveDir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+      player.vx = moveDir * state.moveSpeed;
+      player.x = Math.max(40, player.x + player.vx * dt);
+
+      if (player.x > state.distance) {
+        state.distance = player.x;
+      }
+      state.score = Math.floor(state.distance * 0.08);
+      state.meter = Math.max(0, state.meter - state.meterDrain * dt);
+      if (state.meter <= 0) {
+        die();
+        return;
+      }
+
+      state.cameraX = Math.max(0, player.x - world.width * 0.3);
+
+      if (platforms.length < 8 && state.time - state.lastPlatform > 0.8) {
+        spawnPlatform();
+        state.lastPlatform = state.time;
+      }
+
+      if (state.time - state.lastSpawn > 1.2 + Math.random() * 1.2) {
+        spawnObstacle();
+        state.lastSpawn = state.time;
+      }
+
+      if (state.time - state.lastCollectible > 1.1 + Math.random() * 1.4) {
+        spawnCollectible();
+        state.lastCollectible = state.time;
+      }
+
+      obstacles.forEach((obs) => {
+        const dir = Math.sign(player.x - obs.x) || -1;
+        obs.x += dir * obs.speed * dt;
+      });
+
+      const cleanupX = state.cameraX - 200;
+      for (let i = platforms.length - 1; i >= 0; i -= 1) {
+        if (platforms[i].x + platforms[i].w < cleanupX) {
+          platforms.splice(i, 1);
+        }
+      }
+      for (let i = obstacles.length - 1; i >= 0; i -= 1) {
+        if (obstacles[i].x + obstacles[i].w < cleanupX) {
+          obstacles.splice(i, 1);
+        }
+      }
+      for (let i = collectibles.length - 1; i >= 0; i -= 1) {
+        if (collectibles[i].x + collectibles[i].r < cleanupX) {
+          collectibles.splice(i, 1);
+        }
+      }
+
+      const prevY = player.y;
+      player.vy += state.gravity * dt;
+      player.y += player.vy * dt;
+
+      let landed = false;
+      for (const plat of platforms) {
+        const wasAbove = prevY + player.h <= plat.y + 2;
+        const isFalling = player.vy >= 0;
+        const withinX = player.x + player.w > plat.x && player.x < plat.x + plat.w;
+        if (wasAbove && isFalling && withinX) {
+          if (player.y + player.h >= plat.y) {
+            player.y = plat.y - player.h;
+            player.vy = 0;
+            landed = true;
+            break;
+          }
+        }
+      }
+
+      if (!landed && player.y + player.h >= world.groundY) {
+        player.y = world.groundY - player.h;
+        player.vy = 0;
+        landed = true;
+      }
+
+      if (landed) {
+        player.jumpsLeft = 1;
+      }
+
+      const playerBox = { x: player.x, y: player.y, w: player.w, h: player.h };
+      for (const obs of obstacles) {
+        if (rectsOverlap(playerBox, obs)) {
+          die();
+          break;
+        }
+      }
+
+      for (let i = collectibles.length - 1; i >= 0; i -= 1) {
+        const item = collectibles[i];
+        const dx = player.x + player.w / 2 - item.x;
+        const dy = player.y + player.h / 2 - item.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < player.w * 0.6 + item.r) {
+        collectibles.splice(i, 1);
+        state.score += 15;
+        state.meter = Math.min(1, state.meter + 0.18);
+        state.collectMessageTimer = 0.6;
+        speakYeah();
+      }
+    }
+  }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, world.width, world.height);
+
+      const skylineY = world.height * 0.42;
+      ctx.fillStyle = "rgba(10, 10, 18, 0.75)";
+      ctx.fillRect(0, skylineY, world.width, world.height - skylineY);
+
+      const layers = [
+        { count: 8, height: 80, color: "rgba(32, 26, 44, 0.8)", offset: 0.4 },
+        { count: 10, height: 120, color: "rgba(24, 22, 36, 0.85)", offset: 0.7 }
+      ];
+
+      layers.forEach((layer, index) => {
+        const shift = (state.cameraX * 0.08 * (index + 1)) % 200;
+        ctx.fillStyle = layer.color;
+        for (let i = 0; i < layer.count; i += 1) {
+          const width = 90 + (i % 3) * 40;
+          const x = i * 140 - shift;
+          const y = skylineY - layer.height - (i % 2) * 30;
+          ctx.fillRect(x, y, width, layer.height + (i % 2) * 30);
+        }
+      });
+
+      ctx.fillStyle = "#2c263a";
+      ctx.fillRect(0, world.groundY, world.width, world.height - world.groundY);
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 12; i += 1) {
+        const x = ((state.cameraX * 0.2) % 220) + i * 220;
+        ctx.beginPath();
+        ctx.moveTo(x, world.groundY + 12);
+        ctx.lineTo(x + 80, world.groundY + 12);
+        ctx.stroke();
+      }
+    }
+
+    function drawPlatform(plat) {
+      const grad = ctx.createLinearGradient(plat.x, plat.y, plat.x + plat.w, plat.y + plat.h);
+      grad.addColorStop(0, "rgba(255, 90, 79, 0.5)");
+      grad.addColorStop(1, "rgba(74, 217, 217, 0.5)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(plat.x + 2, plat.y + 2, plat.w - 4, plat.h - 4);
+
+      ctx.fillStyle = "rgba(15, 15, 20, 0.6)";
+      ctx.fillRect(plat.x + 10, plat.y + plat.h * 0.3, plat.w - 20, plat.h * 0.4);
+    }
+
+    function drawCourier() {
+      const screenX = player.x - state.cameraX;
+      const y = player.y;
+      const w = player.w;
+      const h = player.h;
+
+      ctx.save();
+      ctx.translate(screenX, y);
+
+      ctx.fillStyle = "#5b3a2a";
+      ctx.beginPath();
+      ctx.arc(w * 0.55, h * 0.18, w * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1b1b22";
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, h * 0.32);
+      ctx.lineTo(w * 0.9, h * 0.32);
+      ctx.lineTo(w * 0.75, h * 0.95);
+      ctx.lineTo(w * 0.25, h * 0.95);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#2665ff";
+      ctx.beginPath();
+      ctx.moveTo(w * 0.25, h * 0.45);
+      ctx.lineTo(w * 0.8, h * 0.4);
+      ctx.lineTo(w * 0.7, h * 0.75);
+      ctx.lineTo(w * 0.18, h * 0.8);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#141018";
+      ctx.fillRect(w * 0.08, h * 0.62, w * 0.42, h * 0.22);
+      ctx.fillStyle = "#2f2737";
+      ctx.fillRect(w * 0.12, h * 0.65, w * 0.34, h * 0.16);
+
+      ctx.strokeStyle = "#ffd166";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, h * 0.35);
+      ctx.lineTo(w * 0.02, h * 0.7);
+      ctx.stroke();
+
+      ctx.fillStyle = "#0f0f14";
+      ctx.fillRect(w * 0.62, h * 0.16, 6, 6);
+      ctx.fillRect(w * 0.42, h * 0.16, 6, 6);
+
+      ctx.strokeStyle = "#ffd166";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(w * 0.55, h * 0.34, w * 0.12, 0, Math.PI);
+      ctx.stroke();
+
+      ctx.fillStyle = "#0f0f14";
+      ctx.fillRect(w * 0.22, h * 0.88, w * 0.18, h * 0.08);
+      ctx.fillRect(w * 0.6, h * 0.88, w * 0.18, h * 0.08);
+
+      ctx.restore();
+    }
+
+    function drawRoach(obs) {
+      const screenX = obs.x - state.cameraX;
+      const { y, w, h } = obs;
+      ctx.save();
+      ctx.translate(screenX, y);
+
+      ctx.fillStyle = "#4a2a1a";
+      ctx.beginPath();
+      ctx.ellipse(w * 0.5, h * 0.55, w * 0.5, h * 0.45, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#2a160c";
+      ctx.beginPath();
+      ctx.ellipse(w * 0.6, h * 0.45, w * 0.2, h * 0.28, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#8a5a3a";
+      ctx.lineWidth = 2;
+      const stride = Math.sin(state.time * 8 + obs.phase) * 6;
+      for (let i = 0; i < 3; i += 1) {
+        const lx = w * 0.2 + i * w * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(lx, h * 0.5);
+        ctx.lineTo(lx - w * 0.15, h * 0.2 + stride);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(lx + w * 0.2, h * 0.55);
+        ctx.lineTo(lx + w * 0.35, h * 0.8 - stride);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#cfa07a";
+      ctx.beginPath();
+      ctx.moveTo(w * 0.78, h * 0.25);
+      ctx.lineTo(w * 0.95, h * 0.05);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w * 0.82, h * 0.35);
+      ctx.lineTo(w * 1.0, h * 0.2);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawCigarettes(item) {
+      const screenX = item.x - state.cameraX;
+      ctx.save();
+      ctx.translate(screenX, item.y);
+      const w = item.r * 2.8;
+      const h = item.r * 0.9;
+
+      ctx.fillStyle = "#f2efe6";
+      ctx.beginPath();
+      ctx.roundRect(-w / 2, -h / 2, w, h, 6);
+      ctx.fill();
+
+      ctx.fillStyle = "#d28a6a";
+      ctx.fillRect(w * 0.2, -h / 2, w * 0.2, h);
+
+      ctx.fillStyle = "#2a1d1d";
+      ctx.fillRect(-w / 2, -h / 2, w * 0.08, h);
+
+      ctx.strokeStyle = "rgba(255, 178, 0, 0.7)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-w / 2, -h / 2, w, h);
+
+      ctx.restore();
+    }
+
+    function draw() {
+      drawBackground();
+
+      for (const plat of platforms) {
+        drawPlatform({
+          x: plat.x - state.cameraX,
+          y: plat.y,
+          w: plat.w,
+          h: plat.h
+        });
+      }
+
+      ctx.shadowColor = "rgba(255, 178, 0, 0.35)";
+      ctx.shadowBlur = 12;
+      for (const item of collectibles) {
+        drawCigarettes(item);
+      }
+      ctx.shadowBlur = 0;
+
+      for (const obs of obstacles) {
+        drawRoach(obs);
+      }
+
+      drawCourier();
+
+      if (state.collectMessageTimer > 0) {
+        ctx.save();
+        ctx.fillStyle = "#ffb200";
+        ctx.font = "bold 18px \"Trebuchet MS\", sans-serif";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+        ctx.shadowBlur = 6;
+        const screenX = player.x - state.cameraX;
+        ctx.fillText("yeah yeah", screenX + player.w * 0.2, player.y - 12);
+        ctx.restore();
+      }
+    }
+
+    function loop(now) {
+      const dt = Math.min(0.033, (now - state.lastFrame) / 1000);
+      state.lastFrame = now;
+
+      if (input.jumpQueued) {
+        input.jumpQueued = false;
+        handleJump();
+      }
+
+      update(dt);
+      draw();
+
+      hudScore.textContent = Math.floor(state.score).toString();
+      meterFill.style.width = `${Math.max(0, Math.min(1, state.meter)) * 100}%`;
+
+      if (state.collectMessageTimer > 0) {
+        state.collectMessageTimer -= dt;
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("resize", () => {
+      resize();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      hasUserInteracted = true;
+      if (event.code === "Space" || event.code === "ArrowUp" || event.code === "KeyW") {
+        event.preventDefault();
+        queueJump();
+        if (!state.spokenStart && state.running && !state.dead) {
+          speakYeah();
+          state.spokenStart = true;
+        }
+      }
+      if (event.code === "ArrowLeft" || event.code === "KeyA") {
+        input.left = true;
+      }
+      if (event.code === "ArrowRight" || event.code === "KeyD") {
+        input.right = true;
+      }
+      if (event.code === "KeyR" && state.dead) {
+        resetGame();
+      }
+    });
+
+    window.addEventListener("keyup", (event) => {
+      if (event.code === "ArrowLeft" || event.code === "KeyA") {
+        input.left = false;
+      }
+      if (event.code === "ArrowRight" || event.code === "KeyD") {
+        input.right = false;
+      }
+    });
+
+    canvas.addEventListener("pointerdown", () => {
+      hasUserInteracted = true;
+      queueJump();
+      if (!state.spokenStart && state.running && !state.dead) {
+        speakYeah();
+        state.spokenStart = true;
+      }
+    });
+
+    if (jumpBtn) {
+      jumpBtn.addEventListener("click", () => {
+        hasUserInteracted = true;
+        queueJump();
+        if (!state.spokenStart && state.running && !state.dead) {
+          speakYeah();
+          state.spokenStart = true;
+        }
+      });
+    }
+
+    if (leftBtn) {
+      leftBtn.addEventListener("pointerdown", () => {
+        input.left = true;
+      });
+      leftBtn.addEventListener("pointerup", () => {
+        input.left = false;
+      });
+      leftBtn.addEventListener("pointerleave", () => {
+        input.left = false;
+      });
+    }
+
+    if (rightBtn) {
+      rightBtn.addEventListener("pointerdown", () => {
+        input.right = true;
+      });
+      rightBtn.addEventListener("pointerup", () => {
+        input.right = false;
+      });
+      rightBtn.addEventListener("pointerleave", () => {
+        input.right = false;
+      });
+    }
+
+    resize();
+    resetGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
