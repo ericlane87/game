@@ -394,6 +394,13 @@
       player.jumpsLeft = 1;
       overlay.classList.add("hidden");
 
+      const startY = world.groundY - 60;
+      collectibles.push(
+        { x: player.x + 140, y: startY, r: 10 },
+        { x: player.x + 260, y: startY, r: 10 }
+      );
+      state.lastCollectibleX = player.x + 260;
+
       if (hasUserInteracted) {
         speakYeah();
         state.spokenStart = true;
