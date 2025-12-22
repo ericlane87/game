@@ -339,6 +339,7 @@
       fireMessageTimer: 0,
       deathCause: "",
       initialDropTimer: 0,
+      levelEndX: 2600,
       spokenStart: false
     };
 
@@ -413,8 +414,15 @@
       state.dead = true;
       deathReason.textContent = state.deathCause === "meter"
         ? "Addiction meter drained."
-        : "You got caught.";
+        : state.deathCause === "win"
+          ? "Level complete. You reached the trap house."
+          : "You got caught.";
       overlay.classList.remove("hidden");
+    }
+
+    function winLevel() {
+      state.deathCause = "win";
+      die();
     }
 
     function queueJump() {
@@ -564,6 +572,11 @@
       }
 
       state.cameraX = Math.max(state.cameraX, player.x - world.width * 0.3);
+
+      if (player.x + player.w >= state.levelEndX) {
+        winLevel();
+        return;
+      }
 
       if (platforms.length < 14 && state.time - state.lastPlatform > 0.5) {
         spawnPlatform();
@@ -782,6 +795,34 @@
       }
     }
 
+    function drawTrapHouse() {
+      const width = 180;
+      const height = 140;
+      const x = state.levelEndX - width * 0.5 - state.cameraX;
+      const y = world.groundY - height;
+
+      ctx.save();
+      ctx.fillStyle = "#3a2436";
+      ctx.fillRect(x, y, width, height);
+
+      ctx.fillStyle = "#251823";
+      ctx.fillRect(x + 18, y + 50, 50, 90);
+      ctx.fillStyle = "#1a1016";
+      ctx.fillRect(x + 30, y + 72, 12, 26);
+
+      ctx.fillStyle = "#ffb200";
+      ctx.fillRect(x + 86, y + 60, 70, 38);
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 86, y + 60, 70, 38);
+
+      ctx.fillStyle = "#0f0f14";
+      ctx.font = "bold 16px \"Impact\", sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("TRAP HOUSE", x + width / 2, y + 28);
+      ctx.restore();
+    }
+
     function drawCourier() {
       const screenX = player.x - state.cameraX;
       const y = player.y;
@@ -976,6 +1017,7 @@
         drawPlant(plant);
       }
 
+      drawTrapHouse();
       drawCourier();
 
       if (state.collectMessageTimer > 0) {
