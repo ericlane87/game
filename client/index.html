@@ -320,7 +320,7 @@
       moveSpeed: 240,
       score: 0,
       meter: 100,
-      meterDrain: 10,
+      meterDrain: 1,
       meterAdd: 20,
       gravity: 1600,
       jumpPower: 640,
@@ -337,6 +337,7 @@
       collectMessageTimer: 0,
       fireMessageTimer: 0,
       deathCause: "",
+      initialDropTimer: 0,
       spokenStart: false
     };
 
@@ -393,13 +394,7 @@
       player.vx = 0;
       player.jumpsLeft = 1;
       overlay.classList.add("hidden");
-
-      const startY = world.groundY - 60;
-      collectibles.push(
-        { x: player.x + 140, y: startY, r: 10 },
-        { x: player.x + 260, y: startY, r: 10 }
-      );
-      state.lastCollectibleX = player.x + 260;
+      state.initialDropTimer = 3;
 
       if (hasUserInteracted) {
         speakYeah();
@@ -542,6 +537,18 @@
         state.deathCause = "meter";
         die();
         return;
+      }
+
+      if (state.initialDropTimer > 0) {
+        state.initialDropTimer -= dt;
+        if (state.initialDropTimer <= 0) {
+          const startY = world.groundY - 60;
+          collectibles.push(
+            { x: player.x + 140, y: startY, r: 10 },
+            { x: player.x + 260, y: startY, r: 10 }
+          );
+          state.lastCollectibleX = player.x + 260;
+        }
       }
 
       state.cameraX = Math.max(state.cameraX, player.x - world.width * 0.3);
