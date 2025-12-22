@@ -91,6 +91,7 @@
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.35);
       box-shadow: 0 10px 20px var(--shadow);
+      position: relative;
     }
 
     #meter-fill {
@@ -99,6 +100,18 @@
       background: linear-gradient(90deg, var(--neon), var(--heat));
       transition: width 0.1s ease-out;
       box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+
+    #meter-text {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: rgba(15, 15, 20, 0.9);
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
     }
 
     #overlay {
@@ -229,6 +242,7 @@
       <div class="score">Score: <span id="score">0</span></div>
       <div id="meter" aria-label="Addiction meter">
         <div id="meter-fill"></div>
+        <div id="meter-text">100</div>
       </div>
       <div class="score">Addiction Meter</div>
     </div>
@@ -255,6 +269,7 @@
     const ctx = canvas.getContext("2d");
     const hudScore = document.getElementById("score");
     const meterFill = document.getElementById("meter-fill");
+    const meterText = document.getElementById("meter-text");
     const overlay = document.getElementById("overlay");
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
@@ -924,7 +939,9 @@
       draw();
 
       hudScore.textContent = Math.floor(state.score).toString();
-      meterFill.style.width = `${Math.max(0, Math.min(100, state.meter))}%`;
+      const meterValue = Math.max(0, Math.min(100, state.meter));
+      meterFill.style.width = `${meterValue}%`;
+      meterText.textContent = `${Math.round(meterValue)}`;
 
       if (state.collectMessageTimer > 0) {
         state.collectMessageTimer -= dt;
