@@ -110,8 +110,8 @@
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.08em;
-      color: rgba(15, 15, 20, 0.9);
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+      color: rgba(246, 241, 232, 0.95);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     }
 
     #overlay {
@@ -955,7 +955,7 @@
       hudScore.textContent = Math.floor(state.score).toString();
       const meterValue = Math.max(0, Math.min(100, state.meter));
       meterFill.style.width = `${meterValue}%`;
-      meterText.textContent = `${Math.round(meterValue)}`;
+      meterText.textContent = `${Math.round(meterValue)}%`;
 
       if (state.collectMessageTimer > 0) {
         state.collectMessageTimer -= dt;
