@@ -482,11 +482,19 @@
       if (state.flameShots > 0) {
         const baseX = player.x + player.w * 0.6;
         const baseY = player.y + player.h * 0.4;
-        fireballs.push(
-          { x: baseX, y: baseY, r: 14, vx: dir * 420, life: 0.35, type: "flame" },
-          { x: baseX, y: baseY - 10, r: 12, vx: dir * 380, life: 0.35, type: "flame" },
-          { x: baseX, y: baseY + 10, r: 12, vx: dir * 380, life: 0.35, type: "flame" }
-        );
+        const angles = [-Math.PI / 2, -Math.PI / 6, -Math.PI / 3, Math.PI / 6, Math.PI / 3, Math.PI / 2];
+        const speed = 380;
+        angles.forEach((angle) => {
+          fireballs.push({
+            x: baseX,
+            y: baseY,
+            r: 9,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.4,
+            type: "burst"
+          });
+        });
         state.flameShots = 0;
       } else {
         fireballs.push({
@@ -494,6 +502,7 @@
           y: player.y + player.h * 0.4,
           r: 8,
           vx: dir * 520,
+          vy: 0,
           life: 2.2,
           type: "fireball"
         });
@@ -674,6 +683,7 @@
 
       fireballs.forEach((fireball) => {
         fireball.x += fireball.vx * dt;
+        fireball.y += (fireball.vy || 0) * dt;
         fireball.life -= dt;
       });
 
