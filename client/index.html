@@ -277,6 +277,7 @@
     const restartBtn = document.getElementById("restart-btn");
 
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const isDesktop = !isTouch && window.matchMedia("(pointer: fine)").matches;
     if (isTouch) {
       document.body.classList.add("is-touch");
     }
@@ -339,7 +340,7 @@
       fireMessageTimer: 0,
       deathCause: "",
       initialDropTimer: 0,
-      levelEndX: 2600,
+      levelEndX: 7800,
       spokenStart: false
     };
 
@@ -1119,7 +1120,7 @@
       }
     });
 
-    if (!isTouch) {
+    if (isDesktop) {
       canvas.addEventListener("pointerdown", (event) => {
         if (event.button !== 0) return;
         hasUserInteracted = true;
