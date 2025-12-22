@@ -56,6 +56,20 @@
       font-weight: 700;
     }
 
+    #hud-title {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: "Impact", "Arial Black", sans-serif;
+      font-size: clamp(18px, 2.4vw, 28px);
+      color: var(--neon);
+      text-shadow: 0 10px 18px var(--shadow);
+      letter-spacing: 0.06em;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
     #hud .score {
       font-size: 14px;
       background: rgba(18, 16, 24, 0.75);
@@ -173,6 +187,7 @@
     <canvas id="game" aria-label="Stoop Runner"></canvas>
 
     <div id="hud">
+      <div id="hud-title">The Adventures of the Yeah, Yeah Man</div>
       <div class="score">Score: <span id="score">0</span></div>
       <div id="meter" aria-label="Addiction meter">
         <div id="meter-fill"></div>
@@ -350,19 +365,15 @@
         state.cameraX + world.width + 120,
         state.lastObstacleX + 220 + Math.random() * 200
       );
-      const onPlatform = platforms.length && Math.random() > 0.5;
-      let y = world.groundY - size;
-      if (onPlatform) {
-        const plat = platforms[Math.floor(Math.random() * platforms.length)];
-        y = plat.y - size;
-      }
+      const y = world.groundY - size;
       obstacles.push({
         x: spawnX,
         y,
         w: size * 1.2,
         h: size,
         type: "roach",
-        speed: 140 + state.distance * 0.04 + Math.random() * 40,
+        speed: 160 + state.distance * 0.05 + Math.random() * 50,
+        vx: -1,
         phase: Math.random() * Math.PI * 2
       });
       state.lastObstacleX = spawnX;
@@ -450,8 +461,7 @@
       }
 
       obstacles.forEach((obs) => {
-        const dir = Math.sign(player.x - obs.x) || -1;
-        obs.x += dir * obs.speed * dt;
+        obs.x += obs.vx * obs.speed * dt;
       });
 
       const cleanupX = state.cameraX - 200;
