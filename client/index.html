@@ -1227,16 +1227,20 @@
 
       ctx.fillStyle = "#2fa84a";
       ctx.beginPath();
-      ctx.moveTo(0, -plant.r);
-      ctx.lineTo(plant.r * 0.35, -plant.r * 0.2);
-      ctx.lineTo(plant.r, -plant.r * 0.15);
-      ctx.lineTo(plant.r * 0.45, plant.r * 0.1);
-      ctx.lineTo(plant.r * 0.7, plant.r * 0.8);
+      ctx.moveTo(0, -plant.r * 1.1);
+      ctx.lineTo(plant.r * 0.15, -plant.r * 0.4);
+      ctx.lineTo(plant.r * 0.8, -plant.r * 0.9);
+      ctx.lineTo(plant.r * 0.35, -plant.r * 0.1);
+      ctx.lineTo(plant.r * 1.1, plant.r * 0.2);
+      ctx.lineTo(plant.r * 0.3, plant.r * 0.15);
+      ctx.lineTo(plant.r * 0.75, plant.r * 0.95);
       ctx.lineTo(0, plant.r * 0.35);
-      ctx.lineTo(-plant.r * 0.7, plant.r * 0.8);
-      ctx.lineTo(-plant.r * 0.45, plant.r * 0.1);
-      ctx.lineTo(-plant.r, -plant.r * 0.15);
-      ctx.lineTo(-plant.r * 0.35, -plant.r * 0.2);
+      ctx.lineTo(-plant.r * 0.75, plant.r * 0.95);
+      ctx.lineTo(-plant.r * 0.3, plant.r * 0.15);
+      ctx.lineTo(-plant.r * 1.1, plant.r * 0.2);
+      ctx.lineTo(-plant.r * 0.35, -plant.r * 0.1);
+      ctx.lineTo(-plant.r * 0.8, -plant.r * 0.9);
+      ctx.lineTo(-plant.r * 0.15, -plant.r * 0.4);
       ctx.closePath();
       ctx.fill();
 
@@ -1244,7 +1248,7 @@
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, plant.r * 0.35);
-      ctx.lineTo(0, -plant.r);
+      ctx.lineTo(0, -plant.r * 1.1);
       ctx.stroke();
 
       ctx.restore();
