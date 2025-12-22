@@ -1022,8 +1022,15 @@
 
     if (upBtn) {
       upBtn.addEventListener("pointerdown", () => {
+        hasUserInteracted = true;
         queueJump();
       });
+      if (!isTouch) {
+        upBtn.addEventListener("click", () => {
+          hasUserInteracted = true;
+          queueJump();
+        });
+      }
     }
 
     if (downBtn) {
