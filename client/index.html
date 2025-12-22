@@ -703,18 +703,38 @@
     }
 
     function drawPlatform(plat) {
-      const grad = ctx.createLinearGradient(plat.x, plat.y, plat.x + plat.w, plat.y + plat.h);
-      grad.addColorStop(0, "rgba(255, 90, 79, 0.5)");
-      grad.addColorStop(1, "rgba(74, 217, 217, 0.5)");
-      ctx.fillStyle = grad;
+      ctx.fillStyle = "#8b4b2b";
       ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
 
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.strokeStyle = "rgba(255, 214, 160, 0.35)";
       ctx.lineWidth = 2;
-      ctx.strokeRect(plat.x + 2, plat.y + 2, plat.w - 4, plat.h - 4);
+      ctx.strokeRect(plat.x + 1, plat.y + 1, plat.w - 2, plat.h - 2);
 
-      ctx.fillStyle = "rgba(15, 15, 20, 0.6)";
-      ctx.fillRect(plat.x + 10, plat.y + plat.h * 0.3, plat.w - 20, plat.h * 0.4);
+      const brickW = 36;
+      const brickH = 10;
+      const rows = Math.max(1, Math.floor(plat.h / brickH));
+      const cols = Math.max(1, Math.floor(plat.w / brickW));
+
+      ctx.strokeStyle = "rgba(60, 26, 14, 0.6)";
+      ctx.lineWidth = 1.5;
+      for (let row = 0; row < rows; row += 1) {
+        const y = plat.y + row * brickH;
+        ctx.beginPath();
+        ctx.moveTo(plat.x, y);
+        ctx.lineTo(plat.x + plat.w, y);
+        ctx.stroke();
+
+        const offset = row % 2 === 0 ? 0 : brickW * 0.5;
+        for (let col = 0; col <= cols; col += 1) {
+          const x = plat.x + col * brickW - offset;
+          if (x > plat.x && x < plat.x + plat.w) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + brickH);
+            ctx.stroke();
+          }
+        }
+      }
     }
 
     function drawCourier() {
