@@ -512,10 +512,19 @@
       }
 
       const playerBox = { x: player.x, y: player.y, w: player.w, h: player.h };
-      for (const obs of obstacles) {
+      for (let i = obstacles.length - 1; i >= 0; i -= 1) {
+        const obs = obstacles[i];
         if (rectsOverlap(playerBox, obs)) {
-          die();
-          break;
+          const playerFeet = player.y + player.h;
+          const stompZone = obs.y + obs.h * 0.35;
+          if (player.vy > 0 && playerFeet <= stompZone) {
+            obstacles.splice(i, 1);
+            player.vy = -state.jumpPower * 0.45;
+            state.score += 10;
+          } else {
+            die();
+            break;
+          }
         }
       }
 
