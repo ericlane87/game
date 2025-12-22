@@ -136,6 +136,12 @@
       opacity: 0.8;
     }
 
+    #death-reason {
+      margin-top: 10px;
+      font-weight: 700;
+      color: rgba(246, 241, 232, 0.9);
+    }
+
     #restart-btn {
       margin-top: 16px;
       font-family: inherit;
@@ -241,6 +247,7 @@
       <div>
         <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
         <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
+        <div id="death-reason"></div>
         <div id="controls">Move with Arrow keys / A-D, jump with Space, fire with F, or use touch buttons.</div>
         <button id="restart-btn" type="button">New Game</button>
       </div>
@@ -271,6 +278,7 @@
     const hudScore = document.getElementById("score");
     const meterFill = document.getElementById("meter-fill");
     const overlay = document.getElementById("overlay");
+    const deathReason = document.getElementById("death-reason");
     const jumpBtn = document.getElementById("jump-btn");
     const fireBtn = document.getElementById("fire-btn");
     const restartBtn = document.getElementById("restart-btn");
@@ -332,6 +340,7 @@
       cameraX: 0,
       collectMessageTimer: 0,
       fireMessageTimer: 0,
+      deathCause: "",
       spokenStart: false
     };
 
@@ -376,6 +385,7 @@
       state.lastPlatformX = 0;
       state.distance = 0;
       state.cameraX = 0;
+      state.deathCause = "";
       state.spokenStart = false;
       obstacles.length = 0;
       platforms.length = 0;
@@ -397,6 +407,9 @@
     function die() {
       state.running = false;
       state.dead = true;
+      deathReason.textContent = state.deathCause === "meter"
+        ? "Addiction meter drained."
+        : "You got caught.";
       overlay.classList.remove("hidden");
     }
 
@@ -523,6 +536,7 @@
       state.score = Math.floor(state.distance * 0.08);
       state.meter = Math.max(0, state.meter - state.meterDrain * dt);
       if (state.meter <= 0) {
+        state.deathCause = "meter";
         die();
         return;
       }
