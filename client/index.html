@@ -346,6 +346,7 @@
     const platforms = [];
     const collectibles = [];
     const fireballs = [];
+    const plants = [];
     let hasUserInteracted = false;
 
     function resize() {
@@ -389,6 +390,7 @@
       platforms.length = 0;
       collectibles.length = 0;
       fireballs.length = 0;
+      plants.length = 0;
       player.x = 160;
       player.y = world.groundY - player.h;
       player.vy = 0;
@@ -396,6 +398,9 @@
       player.jumpsLeft = 1;
       overlay.classList.add("hidden");
       state.initialDropTimer = 3;
+      for (let i = 0; i < 4; i += 1) {
+        spawnPlatform();
+      }
 
       if (hasUserInteracted) {
         speakYeah();
@@ -458,7 +463,12 @@
         state.cameraX + world.width + 180,
         state.lastObstacleX + 280 + Math.random() * 240
       );
-      const y = world.groundY - size;
+      const onPlatform = platforms.length && Math.random() < 0.55;
+      let y = world.groundY - size;
+      if (onPlatform) {
+        const plat = platforms[Math.floor(Math.random() * platforms.length)];
+        y = plat.y - size;
+      }
       obstacles.push({
         x: spawnX,
         y,
@@ -478,7 +488,7 @@
         state.cameraX + world.width + 160,
         state.lastCollectibleX + 280 + Math.random() * 240
       );
-      const onPlatform = platforms.length && Math.random() > 0.3;
+      const onPlatform = platforms.length && Math.random() < 0.6;
       let y = world.groundY - 50 - Math.random() * 40;
       if (onPlatform) {
         const plat = platforms[Math.floor(Math.random() * platforms.length)];
@@ -498,12 +508,13 @@
       const yOptions = [
         world.groundY - 120,
         world.groundY - 200,
-        world.groundY - 280
+        world.groundY - 280,
+        world.groundY - 340
       ];
       const y = yOptions[Math.floor(Math.random() * yOptions.length)];
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
-        state.lastPlatformX + 260 + Math.random() * 220
+        state.lastPlatformX + 200 + Math.random() * 160
       );
       platforms.push({ x: spawnX, y, w, h });
       state.lastPlatformX = spawnX;
@@ -554,7 +565,7 @@
 
       state.cameraX = Math.max(state.cameraX, player.x - world.width * 0.3);
 
-      if (platforms.length < 8 && state.time - state.lastPlatform > 0.8) {
+      if (platforms.length < 14 && state.time - state.lastPlatform > 0.5) {
         spawnPlatform();
         state.lastPlatform = state.time;
       }
@@ -592,6 +603,11 @@
       for (let i = collectibles.length - 1; i >= 0; i -= 1) {
         if (collectibles[i].x + collectibles[i].r < cleanupX) {
           collectibles.splice(i, 1);
+        }
+      }
+      for (let i = plants.length - 1; i >= 0; i -= 1) {
+        if (plants[i].x + plants[i].r < cleanupX) {
+          plants.splice(i, 1);
         }
       }
       for (let i = fireballs.length - 1; i >= 0; i -= 1) {
@@ -653,8 +669,15 @@
           const dx = obs.x + obs.w * 0.5 - fb.x;
           const dy = obs.y + obs.h * 0.5 - fb.y;
           if (Math.hypot(dx, dy) < obs.w * 0.6 + fb.r) {
-            obstacles.splice(i, 1);
             fireballs.splice(j, 1);
+            if (Math.random() < 0.2) {
+              plants.push({
+                x: obs.x + obs.w * 0.5,
+                y: obs.y - 8,
+                r: 12
+              });
+            }
+            obstacles.splice(i, 1);
             state.score += 8;
             break;
           }
@@ -672,6 +695,17 @@
           state.meter = Math.min(100, state.meter + state.meterAdd);
           state.collectMessageTimer = 0.6;
           speakYeah();
+        }
+      }
+
+      for (let i = plants.length - 1; i >= 0; i -= 1) {
+        const plant = plants[i];
+        const dx = player.x + player.w / 2 - plant.x;
+        const dy = player.y + player.h / 2 - plant.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < player.w * 0.6 + plant.r) {
+          plants.splice(i, 1);
+          state.meter = 100;
         }
       }
     }
@@ -878,6 +912,32 @@
       ctx.restore();
     }
 
+    function drawPlant(plant) {
+      const screenX = plant.x - state.cameraX;
+      ctx.save();
+      ctx.translate(screenX, plant.y);
+
+      ctx.fillStyle = "#2f8f3a";
+      ctx.beginPath();
+      ctx.arc(0, 0, plant.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1f6d2a";
+      ctx.beginPath();
+      ctx.arc(-plant.r * 0.6, plant.r * 0.2, plant.r * 0.6, 0, Math.PI * 2);
+      ctx.arc(plant.r * 0.6, plant.r * 0.2, plant.r * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, plant.r * 0.9);
+      ctx.lineTo(0, plant.r * 1.6);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
     function draw() {
       drawBackground();
 
@@ -910,6 +970,10 @@
         ctx.arc(screenX, fireball.y, fireball.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
+      }
+
+      for (const plant of plants) {
+        drawPlant(plant);
       }
 
       drawCourier();
