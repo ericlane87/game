@@ -348,6 +348,7 @@
       levelEndX: 7800,
       goalLabel: "TRAP HOUSE",
       flameShots: 0,
+      enemyShotTimer: 0,
       spokenStart: false
     };
 
@@ -356,6 +357,7 @@
     const collectibles = [];
     const fireballs = [];
     const plants = [];
+    const enemyShots = [];
     let hasUserInteracted = false;
 
     function resize() {
@@ -396,12 +398,14 @@
       state.cameraX = 0;
       state.deathCause = "";
       state.flameShots = 0;
+      state.enemyShotTimer = 0;
       state.spokenStart = false;
       obstacles.length = 0;
       platforms.length = 0;
       collectibles.length = 0;
       fireballs.length = 0;
       plants.length = 0;
+      enemyShots.length = 0;
       player.x = 160;
       player.y = world.groundY - player.h;
       player.vy = 0;
@@ -712,6 +716,21 @@
         state.lastCollectible = state.time;
       }
 
+      if (state.level === 2 && state.time - state.enemyShotTimer >= 5) {
+        const helis = obstacles.filter((obs) => obs.type === "heli");
+        if (helis.length) {
+          const shooter = helis[Math.floor(Math.random() * helis.length)];
+          enemyShots.push({
+            x: shooter.x,
+            y: shooter.y + shooter.h * 0.6,
+            r: 6,
+            vx: -220,
+            life: 3
+          });
+        }
+        state.enemyShotTimer = state.time;
+      }
+
       obstacles.forEach((obs) => {
         const dir = obs.x > player.x ? -1 : 1;
         obs.x += dir * obs.speed * dt;
@@ -721,6 +740,11 @@
         fireball.x += fireball.vx * dt;
         fireball.y += (fireball.vy || 0) * dt;
         fireball.life -= dt;
+      });
+
+      enemyShots.forEach((shot) => {
+        shot.x += shot.vx * dt;
+        shot.life -= dt;
       });
 
       const cleanupX = state.cameraX - 200;
@@ -747,6 +771,11 @@
       for (let i = fireballs.length - 1; i >= 0; i -= 1) {
         if (fireballs[i].life <= 0 || fireballs[i].x < cleanupX || fireballs[i].x > state.cameraX + world.width + 200) {
           fireballs.splice(i, 1);
+        }
+      }
+      for (let i = enemyShots.length - 1; i >= 0; i -= 1) {
+        if (enemyShots[i].life <= 0 || enemyShots[i].x < cleanupX) {
+          enemyShots.splice(i, 1);
         }
       }
 
@@ -794,6 +823,18 @@
             die();
             break;
           }
+        }
+      }
+
+      for (let i = enemyShots.length - 1; i >= 0; i -= 1) {
+        const shot = enemyShots[i];
+        const dx = player.x + player.w * 0.5 - shot.x;
+        const dy = player.y + player.h * 0.5 - shot.y;
+        if (Math.hypot(dx, dy) < player.w * 0.4 + shot.r) {
+          enemyShots.splice(i, 1);
+          state.deathCause = "enemy";
+          die();
+          break;
         }
       }
 
@@ -1223,6 +1264,17 @@
         ctx.shadowColor = "rgba(255, 178, 0, 0.7)";
         ctx.shadowBlur = 10;
         ctx.arc(screenX, fireball.y, fireball.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.fillStyle = "#ff5a4f";
+      for (const shot of enemyShots) {
+        const screenX = shot.x - state.cameraX;
+        ctx.beginPath();
+        ctx.shadowColor = "rgba(255, 90, 79, 0.6)";
+        ctx.shadowBlur = 8;
+        ctx.arc(screenX, shot.y, shot.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       }
