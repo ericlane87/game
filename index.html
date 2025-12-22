@@ -340,7 +340,10 @@
       fireMessageTimer: 0,
       deathCause: "",
       initialDropTimer: 0,
+      level: 1,
       levelEndX: 7800,
+      goalLabel: "TRAP HOUSE",
+      flameShots: 0,
       spokenStart: false
     };
 
@@ -372,7 +375,8 @@
       state.moveSpeed = isMobile ? 220 : 260;
     }
 
-    function resetGame() {
+    function resetGame(nextLevel = state.level) {
+      state.level = nextLevel;
       state.running = true;
       state.dead = false;
       state.score = 0;
@@ -387,6 +391,7 @@
       state.distance = 0;
       state.cameraX = 0;
       state.deathCause = "";
+      state.flameShots = 0;
       state.spokenStart = false;
       obstacles.length = 0;
       platforms.length = 0;
@@ -399,9 +404,14 @@
       player.vx = 0;
       player.jumpsLeft = 1;
       overlay.classList.add("hidden");
+      restartBtn.textContent = "New Game";
       state.initialDropTimer = 3;
-      for (let i = 0; i < 4; i += 1) {
-        spawnPlatform();
+      state.levelEndX = state.level === 2 ? 9000 : 7800;
+      state.goalLabel = state.level === 2 ? "ROACH MOTEL" : "TRAP HOUSE";
+      seedPlatformsForLevel(state.level);
+      seedStartPlant();
+      for (let i = 0; i < 3; i += 1) {
+        spawnObstacle();
       }
       for (let i = 0; i < 3; i += 1) {
         spawnObstacle();
@@ -420,11 +430,16 @@
       const reasonText = state.deathCause === "meter"
         ? "Addiction meter drained."
         : state.deathCause === "win"
-          ? "Level complete. You reached the trap house."
-          : state.deathCause === "roach"
-            ? "You hit a roach."
+          ? `Level ${state.level} complete.`
+        : state.deathCause === "enemy"
+            ? "You got caught."
             : "You got caught.";
       deathReason.textContent = `${reasonText} Meter: ${Math.round(meterValue)}%`;
+      if (state.deathCause === "win") {
+        restartBtn.textContent = state.level === 1 ? "Next Level" : "New Game";
+      } else {
+        restartBtn.textContent = "New Game";
+      }
       overlay.classList.remove("hidden");
     }
 
@@ -464,26 +479,43 @@
     function shootFireball() {
       if (state.dead || !state.running) return;
       const dir = player.facing || 1;
-      fireballs.push({
-        x: player.x + player.w * 0.6,
-        y: player.y + player.h * 0.4,
-        r: 8,
-        vx: dir * 520
-      });
+      if (state.flameShots > 0) {
+        const baseX = player.x + player.w * 0.6;
+        const baseY = player.y + player.h * 0.4;
+        fireballs.push(
+          { x: baseX, y: baseY, r: 14, vx: dir * 420, life: 0.35, type: "flame" },
+          { x: baseX, y: baseY - 10, r: 12, vx: dir * 380, life: 0.35, type: "flame" },
+          { x: baseX, y: baseY + 10, r: 12, vx: dir * 380, life: 0.35, type: "flame" }
+        );
+        state.flameShots = 0;
+      } else {
+        fireballs.push({
+          x: player.x + player.w * 0.6,
+          y: player.y + player.h * 0.4,
+          r: 8,
+          vx: dir * 520,
+          life: 2.2,
+          type: "fireball"
+        });
+      }
       state.fireMessageTimer = 0.6;
     }
 
     function spawnObstacle() {
-      const isHousing = Math.random() < 0.25;
-      const size = isHousing ? 46 : 28 + Math.random() * 10;
+      const roll = Math.random();
+      const isHousing = state.level === 2 ? roll < 0.35 : roll < 0.2;
+      const isHeli = state.level === 2 && !isHousing && roll < 0.55;
+      const size = isHeli ? 38 : isHousing ? 46 : 28 + Math.random() * 10;
       const width = isHousing ? size * 0.9 : size * 1.2;
       const spawnX = Math.max(
         state.cameraX + world.width + 180,
         state.lastObstacleX + 280 + Math.random() * 240
       );
-      const onPlatform = platforms.length && Math.random() < 0.55;
+      const onPlatform = platforms.length && Math.random() < 0.6;
       let y = world.groundY - size;
-      if (onPlatform) {
+      if (isHeli) {
+        y = world.groundY - 220 - Math.random() * 120;
+      } else if (onPlatform) {
         const plat = platforms[Math.floor(Math.random() * platforms.length)];
         y = plat.y - size;
       }
@@ -492,8 +524,8 @@
         y,
         w: width,
         h: size,
-        type: isHousing ? "housing" : "roach",
-        speed: (isHousing ? 70 : 90) + state.distance * 0.03 + Math.random() * 35,
+        type: isHeli ? "heli" : isHousing ? "housing" : "roach",
+        speed: (isHeli ? 120 : isHousing ? 70 : 90) + state.distance * 0.03 + Math.random() * 35,
         vx: -1,
         phase: Math.random() * Math.PI * 2
       });
@@ -523,12 +555,9 @@
     function spawnPlatform() {
       const w = 140 + Math.random() * 140;
       const h = 14;
-      const yOptions = [
-        world.groundY - 120,
-        world.groundY - 200,
-        world.groundY - 280,
-        world.groundY - 340
-      ];
+      const yOptions = state.level === 2
+        ? [world.groundY - 140, world.groundY - 220, world.groundY - 300, world.groundY - 380]
+        : [world.groundY - 120, world.groundY - 200, world.groundY - 280, world.groundY - 340];
       const y = yOptions[Math.floor(Math.random() * yOptions.length)];
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
@@ -536,6 +565,40 @@
       );
       platforms.push({ x: spawnX, y, w, h });
       state.lastPlatformX = spawnX;
+    }
+
+    function seedPlatformsForLevel(level) {
+      const baseX = player.x + 220;
+      const layouts = level === 2
+        ? [
+            { x: baseX, y: world.groundY - 160, w: 200 },
+            { x: baseX + 280, y: world.groundY - 260, w: 180 },
+            { x: baseX + 560, y: world.groundY - 200, w: 220 },
+            { x: baseX + 860, y: world.groundY - 320, w: 160 },
+            { x: baseX + 1120, y: world.groundY - 240, w: 240 }
+          ]
+        : [
+            { x: baseX, y: world.groundY - 140, w: 220 },
+            { x: baseX + 260, y: world.groundY - 220, w: 180 },
+            { x: baseX + 520, y: world.groundY - 180, w: 240 },
+            { x: baseX + 820, y: world.groundY - 300, w: 180 },
+            { x: baseX + 1060, y: world.groundY - 220, w: 220 }
+          ];
+      layouts.forEach((plat) => {
+        platforms.push({ x: plat.x, y: plat.y, w: plat.w, h: 14 });
+        state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
+      });
+      for (let i = 0; i < 4; i += 1) {
+        spawnPlatform();
+      }
+    }
+
+    function seedStartPlant() {
+      plants.push({
+        x: player.x + 160,
+        y: world.groundY - 60,
+        r: 14
+      });
     }
 
     function rectsOverlap(a, b) {
@@ -610,6 +673,7 @@
 
       fireballs.forEach((fireball) => {
         fireball.x += fireball.vx * dt;
+        fireball.life -= dt;
       });
 
       const cleanupX = state.cameraX - 200;
@@ -634,7 +698,7 @@
         }
       }
       for (let i = fireballs.length - 1; i >= 0; i -= 1) {
-        if (fireballs[i].x < cleanupX || fireballs[i].x > state.cameraX + world.width + 200) {
+        if (fireballs[i].life <= 0 || fireballs[i].x < cleanupX || fireballs[i].x > state.cameraX + world.width + 200) {
           fireballs.splice(i, 1);
         }
       }
@@ -679,7 +743,7 @@
             player.vy = -state.jumpPower * 0.45;
             state.score += 10;
           } else {
-            state.deathCause = "roach";
+            state.deathCause = "enemy";
             die();
             break;
           }
@@ -730,6 +794,7 @@
         if (dist < player.w * 0.6 + plant.r) {
           plants.splice(i, 1);
           state.meter = 100;
+          state.flameShots = 1;
         }
       }
     }
@@ -828,9 +893,14 @@
       ctx.strokeRect(x + 86, y + 60, 70, 38);
 
       ctx.fillStyle = "#0f0f14";
-      ctx.font = "bold 16px \"Impact\", sans-serif";
+      ctx.font = "bold 15px \"Impact\", sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("TRAP HOUSE", x + width / 2, y + 28);
+      if (state.goalLabel === "ROACH MOTEL") {
+        ctx.fillText("ROACH", x + width / 2, y + 22);
+        ctx.fillText("MOTEL", x + width / 2, y + 38);
+      } else {
+        ctx.fillText("TRAP HOUSE", x + width / 2, y + 28);
+      }
       ctx.restore();
     }
 
@@ -979,6 +1049,38 @@
       ctx.restore();
     }
 
+    function drawHelicopter(obs) {
+      const screenX = obs.x - state.cameraX;
+      const { y, w, h } = obs;
+      ctx.save();
+      ctx.translate(screenX, y);
+
+      ctx.fillStyle = "#3b3f4d";
+      ctx.beginPath();
+      ctx.ellipse(w * 0.5, h * 0.6, w * 0.5, h * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1b1f28";
+      ctx.fillRect(w * 0.2, h * 0.35, w * 0.5, h * 0.2);
+
+      ctx.strokeStyle = "#d9d9d9";
+      ctx.lineWidth = 3;
+      const rotor = Math.sin(state.time * 12 + obs.phase) * 12;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.5 - 30 - rotor, h * 0.2);
+      ctx.lineTo(w * 0.5 + 30 + rotor, h * 0.2);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#3b3f4d";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.65, h * 0.55);
+      ctx.lineTo(w * 0.9, h * 0.7);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
     function drawCigarettes(item) {
       const screenX = item.x - state.cameraX;
       ctx.save();
@@ -1009,22 +1111,26 @@
       ctx.save();
       ctx.translate(screenX, plant.y);
 
-      ctx.fillStyle = "#2f8f3a";
+      ctx.fillStyle = "#2fa84a";
       ctx.beginPath();
-      ctx.arc(0, 0, plant.r, 0, Math.PI * 2);
+      ctx.moveTo(0, -plant.r);
+      ctx.lineTo(plant.r * 0.35, -plant.r * 0.2);
+      ctx.lineTo(plant.r, -plant.r * 0.15);
+      ctx.lineTo(plant.r * 0.45, plant.r * 0.1);
+      ctx.lineTo(plant.r * 0.7, plant.r * 0.8);
+      ctx.lineTo(0, plant.r * 0.35);
+      ctx.lineTo(-plant.r * 0.7, plant.r * 0.8);
+      ctx.lineTo(-plant.r * 0.45, plant.r * 0.1);
+      ctx.lineTo(-plant.r, -plant.r * 0.15);
+      ctx.lineTo(-plant.r * 0.35, -plant.r * 0.2);
+      ctx.closePath();
       ctx.fill();
 
-      ctx.fillStyle = "#1f6d2a";
-      ctx.beginPath();
-      ctx.arc(-plant.r * 0.6, plant.r * 0.2, plant.r * 0.6, 0, Math.PI * 2);
-      ctx.arc(plant.r * 0.6, plant.r * 0.2, plant.r * 0.6, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(0, plant.r * 0.9);
-      ctx.lineTo(0, plant.r * 1.6);
+      ctx.moveTo(0, plant.r * 0.35);
+      ctx.lineTo(0, -plant.r);
       ctx.stroke();
 
       ctx.restore();
@@ -1052,6 +1158,8 @@
       for (const obs of obstacles) {
         if (obs.type === "housing") {
           drawHousingEnemy(obs);
+        } else if (obs.type === "heli") {
+          drawHelicopter(obs);
         } else {
           drawRoach(obs);
         }
@@ -1187,7 +1295,11 @@
     if (restartBtn) {
       restartBtn.addEventListener("click", () => {
         hasUserInteracted = true;
-        resetGame();
+        if (state.deathCause === "win") {
+          resetGame(state.level === 1 ? 2 : 1);
+        } else {
+          resetGame(state.level);
+        }
       });
     }
 
