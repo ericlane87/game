@@ -72,6 +72,23 @@
       white-space: nowrap;
     }
 
+    #voice-toggle {
+      pointer-events: auto;
+      background: rgba(18, 16, 24, 0.8);
+      color: var(--cream);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      box-shadow: 0 10px 20px var(--shadow);
+    }
+
+    #voice-toggle:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
     #hud .score {
       font-size: 14px;
       background: rgba(18, 16, 24, 0.75);
@@ -245,6 +262,7 @@
         <div id="meter-text">100</div>
       </div>
       <div class="score">Addiction: <span id="meter-value">100%</span></div>
+      <button id="voice-toggle" type="button" aria-label="Toggle voice">Voice On</button>
     </div>
 
     <div id="overlay">
@@ -275,6 +293,7 @@
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
     const restartBtn = document.getElementById("restart-btn");
+    const voiceToggle = document.getElementById("voice-toggle");
 
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     const isDesktop = !isTouch;
@@ -349,6 +368,7 @@
       goalLabel: "TRAP HOUSE",
       flameShots: 0,
       enemyShotTimer: 0,
+      voiceEnabled: true,
       spokenStart: false
     };
 
@@ -484,6 +504,7 @@
     }
 
     function speakYeah() {
+      if (!state.voiceEnabled) return;
       if (!("speechSynthesis" in window)) return;
       const utter = new SpeechSynthesisUtterance("yeah, yeah");
       const voice = selectVoice();
@@ -495,6 +516,7 @@
     }
 
     function speakGreenThing() {
+      if (!state.voiceEnabled) return;
       if (!("speechSynthesis" in window)) return;
       const utter = new SpeechSynthesisUtterance("Green Thing Time");
       const voice = selectVoice();
@@ -1392,6 +1414,13 @@
       fireBtn.addEventListener("click", () => {
         hasUserInteracted = true;
         queueFire();
+      });
+    }
+
+    if (voiceToggle) {
+      voiceToggle.addEventListener("click", () => {
+        state.voiceEnabled = !state.voiceEnabled;
+        voiceToggle.textContent = state.voiceEnabled ? "Voice On" : "Voice Off";
       });
     }
 
