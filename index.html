@@ -257,6 +257,7 @@
       score: 0,
       meter: 1,
       meterDrain: 0.1,
+      meterAdd: 0.2,
       gravity: 1600,
       jumpPower: 640,
       time: 0,
@@ -537,7 +538,7 @@
         if (dist < player.w * 0.6 + item.r) {
         collectibles.splice(i, 1);
         state.score += 15;
-        state.meter = Math.min(1, state.meter + 0.18);
+          state.meter = Math.min(1, state.meter + state.meterAdd);
         state.collectMessageTimer = 0.6;
         speakYeah();
       }
