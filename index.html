@@ -325,9 +325,9 @@
       dead: false,
       moveSpeed: 240,
       score: 0,
-      meter: 1,
-      meterDrain: 0.05,
-      meterAdd: 0.2,
+      meter: 100,
+      meterDrain: 4,
+      meterAdd: 20,
       gravity: 1600,
       jumpPower: 640,
       time: 0,
@@ -377,7 +377,7 @@
       state.running = true;
       state.dead = false;
       state.score = 0;
-      state.meter = 1;
+      state.meter = 100;
       state.time = 0;
       state.lastSpawn = 0;
       state.lastCollectible = 0;
@@ -478,8 +478,8 @@
     function spawnCollectible() {
       const r = 10;
       const spawnX = Math.max(
-        state.cameraX + world.width + 120,
-        state.lastCollectibleX + 200 + Math.random() * 180
+        state.cameraX + world.width + 160,
+        state.lastCollectibleX + 280 + Math.random() * 240
       );
       const onPlatform = platforms.length && Math.random() > 0.3;
       let y = world.groundY - 50 - Math.random() * 40;
@@ -555,7 +555,7 @@
         state.lastSpawn = state.time;
       }
 
-      if (state.time - state.lastCollectible > 1.1 + Math.random() * 1.4) {
+      if (state.time - state.lastCollectible > 0.9 + Math.random() * 1.1) {
         spawnCollectible();
         state.lastCollectible = state.time;
       }
@@ -658,14 +658,14 @@
         const dy = player.y + player.h / 2 - item.y;
         const dist = Math.hypot(dx, dy);
         if (dist < player.w * 0.6 + item.r) {
-        collectibles.splice(i, 1);
-        state.score += 15;
-          state.meter = Math.min(1, state.meter + state.meterAdd);
-        state.collectMessageTimer = 0.6;
-        speakYeah();
+          collectibles.splice(i, 1);
+          state.score += 15;
+          state.meter = Math.min(100, state.meter + state.meterAdd);
+          state.collectMessageTimer = 0.6;
+          speakYeah();
+        }
       }
     }
-  }
 
     function drawBackground() {
       ctx.clearRect(0, 0, world.width, world.height);
@@ -945,7 +945,7 @@
       draw();
 
       hudScore.textContent = Math.floor(state.score).toString();
-      meterFill.style.width = `${Math.max(0, Math.min(1, state.meter)) * 100}%`;
+      meterFill.style.width = `${Math.max(0, Math.min(100, state.meter))}%`;
 
       if (state.collectMessageTimer > 0) {
         state.collectMessageTimer -= dt;
