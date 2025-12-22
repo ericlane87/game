@@ -165,22 +165,13 @@
 
     #touch-controls {
       position: absolute;
-      inset: auto 16px 20px 16px;
+      right: 16px;
+      bottom: 20px;
       display: none;
-      justify-content: space-between;
       align-items: flex-end;
       pointer-events: auto;
-      gap: 18px;
     }
 
-    #dpad {
-      display: grid;
-      grid-template-columns: repeat(3, 54px);
-      grid-template-rows: repeat(3, 54px);
-      gap: 8px;
-    }
-
-    #dpad button,
     #action-buttons button {
       font-family: inherit;
       font-weight: 800;
@@ -192,19 +183,16 @@
       border-radius: 18px;
       padding: 12px 16px;
       box-shadow: 0 12px 24px var(--shadow);
-      width: 54px;
-      height: 54px;
     }
 
     #action-buttons {
       display: flex;
       flex-direction: column;
-      gap: 12px;
     }
 
     #action-buttons button {
-      width: 80px;
-      height: 54px;
+      width: 84px;
+      height: 58px;
     }
 
     #touch-controls button:active {
@@ -250,25 +238,13 @@
         <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
         <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
         <div id="death-reason"></div>
-        <div id="controls">Move with Arrow keys / A-D, jump with Space, fire with F, or use touch buttons.</div>
+        <div id="controls">Desktop: A-D to move, Space to jump, click or F to fire. Mobile: drag to move, tap to jump, Fire button to shoot.</div>
         <button id="restart-btn" type="button">New Game</button>
       </div>
     </div>
 
     <div id="touch-controls">
-      <div id="dpad">
-        <span></span>
-        <button id="up-btn" type="button">Up</button>
-        <span></span>
-        <button id="left-btn" type="button">Left</button>
-        <span></span>
-        <button id="right-btn" type="button">Right</button>
-        <span></span>
-        <button id="down-btn" type="button">Down</button>
-        <span></span>
-      </div>
       <div id="action-buttons">
-        <button id="jump-btn" type="button">Jump</button>
         <button id="fire-btn" type="button">Fire</button>
       </div>
     </div>
@@ -281,13 +257,8 @@
     const meterFill = document.getElementById("meter-fill");
     const overlay = document.getElementById("overlay");
     const deathReason = document.getElementById("death-reason");
-    const jumpBtn = document.getElementById("jump-btn");
     const fireBtn = document.getElementById("fire-btn");
     const restartBtn = document.getElementById("restart-btn");
-    const leftBtn = document.getElementById("left-btn");
-    const rightBtn = document.getElementById("right-btn");
-    const upBtn = document.getElementById("up-btn");
-    const downBtn = document.getElementById("down-btn");
 
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     if (isTouch) {
@@ -299,6 +270,14 @@
       fireQueued: false,
       left: false,
       right: false
+    };
+
+    const touchMove = {
+      active: false,
+      id: null,
+      startX: 0,
+      lastX: 0,
+      moved: false
     };
 
     const world = {
@@ -994,27 +973,10 @@
       }
     });
 
-    canvas.addEventListener("pointerdown", () => {
-      hasUserInteracted = true;
-      if (isTouch) {
-        queueJump();
-        if (!state.spokenStart && state.running && !state.dead) {
-          speakYeah();
-          state.spokenStart = true;
-        }
-      } else {
-        queueFire();
-      }
-    });
-
-    if (jumpBtn) {
-      jumpBtn.addEventListener("click", () => {
+    if (!isTouch) {
+      canvas.addEventListener("pointerdown", () => {
         hasUserInteracted = true;
-        queueJump();
-        if (!state.spokenStart && state.running && !state.dead) {
-          speakYeah();
-          state.spokenStart = true;
-        }
+        queueFire();
       });
     }
 
@@ -1032,47 +994,50 @@
       });
     }
 
-    if (leftBtn) {
-      leftBtn.addEventListener("pointerdown", () => {
-        input.left = true;
-      });
-      leftBtn.addEventListener("pointerup", () => {
-        input.left = false;
-      });
-      leftBtn.addEventListener("pointerleave", () => {
-        input.left = false;
-      });
-    }
-
-    if (rightBtn) {
-      rightBtn.addEventListener("pointerdown", () => {
-        input.right = true;
-      });
-      rightBtn.addEventListener("pointerup", () => {
-        input.right = false;
-      });
-      rightBtn.addEventListener("pointerleave", () => {
-        input.right = false;
-      });
-    }
-
-    if (upBtn) {
-      upBtn.addEventListener("pointerdown", () => {
+    if (isTouch) {
+      canvas.addEventListener("pointerdown", (event) => {
         hasUserInteracted = true;
-        queueJump();
+        touchMove.active = true;
+        touchMove.id = event.pointerId;
+        touchMove.startX = event.clientX;
+        touchMove.lastX = event.clientX;
+        touchMove.moved = false;
       });
-      if (!isTouch) {
-        upBtn.addEventListener("click", () => {
-          hasUserInteracted = true;
-          queueJump();
-        });
-      }
-    }
 
-    if (downBtn) {
-      downBtn.addEventListener("pointerdown", () => {
+      canvas.addEventListener("pointermove", (event) => {
+        if (!touchMove.active || event.pointerId !== touchMove.id) return;
+        const dx = event.clientX - touchMove.startX;
+        touchMove.lastX = event.clientX;
+        if (Math.abs(dx) > 12) {
+          touchMove.moved = true;
+          input.left = dx < -12;
+          input.right = dx > 12;
+        } else {
+          input.left = false;
+          input.right = false;
+        }
+      });
+
+      canvas.addEventListener("pointerup", (event) => {
+        if (event.pointerId !== touchMove.id) return;
+        if (!touchMove.moved) {
+          queueJump();
+          if (!state.spokenStart && state.running && !state.dead) {
+            speakYeah();
+            state.spokenStart = true;
+          }
+        }
         input.left = false;
         input.right = false;
+        touchMove.active = false;
+        touchMove.id = null;
+      });
+
+      canvas.addEventListener("pointercancel", () => {
+        input.left = false;
+        input.right = false;
+        touchMove.active = false;
+        touchMove.id = null;
       });
     }
 
