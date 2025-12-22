@@ -85,11 +85,11 @@
       flex: 1;
       max-width: 360px;
       min-width: 160px;
-      height: 20px;
+      height: 22px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.28);
+      background: rgba(15, 15, 20, 0.65);
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.45);
       box-shadow: 0 10px 20px var(--shadow);
       position: relative;
     }
@@ -107,7 +107,7 @@
       inset: 0;
       display: grid;
       place-items: center;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 800;
       letter-spacing: 0.08em;
       color: rgba(246, 241, 232, 0.95);
@@ -244,7 +244,7 @@
         <div id="meter-fill"></div>
         <div id="meter-text">100</div>
       </div>
-      <div class="score">Addiction Meter</div>
+      <div class="score">Addiction: <span id="meter-value">100%</span></div>
     </div>
 
     <div id="overlay">
@@ -270,6 +270,7 @@
     const hudScore = document.getElementById("score");
     const meterFill = document.getElementById("meter-fill");
     const meterText = document.getElementById("meter-text");
+    const meterValueLabel = document.getElementById("meter-value");
     const overlay = document.getElementById("overlay");
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
@@ -956,6 +957,9 @@
       const meterValue = Math.max(0, Math.min(100, state.meter));
       meterFill.style.width = `${meterValue}%`;
       meterText.textContent = `${Math.round(meterValue)}%`;
+      if (meterValueLabel) {
+        meterValueLabel.textContent = `${Math.round(meterValue)}%`;
+      }
 
       if (state.collectMessageTimer > 0) {
         state.collectMessageTimer -= dt;
