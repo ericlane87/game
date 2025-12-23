@@ -2234,7 +2234,11 @@
         ctx.strokeStyle = "rgba(15, 15, 20, 0.6)";
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(-w / 2, -h / 2, w, h, 4);
+        if (ctx.roundRect) {
+          ctx.roundRect(-w / 2, -h / 2, w, h, 4);
+        } else {
+          ctx.rect(-w / 2, -h / 2, w, h);
+        }
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = "#ff5a4f";
