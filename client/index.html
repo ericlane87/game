@@ -468,6 +468,7 @@
       copCars: [],
       copCarTimer: 0,
       copCarSpawnTimer: 0,
+      copHitCooldown: 0,
       lastPlatformY: 0,
       dogsActive: false,
       dogsX: 0,
@@ -555,6 +556,7 @@
       state.copCars = [];
       state.copCarTimer = 0;
       state.copCarSpawnTimer = 0;
+      state.copHitCooldown = 0;
       state.lastPlatformY = 0;
       state.dogsActive = false;
       state.dogsX = 0;
@@ -611,6 +613,7 @@
       state.initialDropTimer = 3;
       state.copCarTimer = 5;
       state.copCarSpawnTimer = 0;
+      state.copHitCooldown = 0;
       state.lastPlatformY = world.groundY - 160;
       state.levelEndX = levelConfig ? levelConfig.endX : 15600;
       state.goalLabel = levelConfig ? levelConfig.label : "TRAP HOUSE";
@@ -1081,6 +1084,9 @@
       }
 
       state.cameraX = Math.max(state.cameraX, player.x - world.width * 0.3);
+      if (state.copHitCooldown > 0) {
+        state.copHitCooldown = Math.max(0, state.copHitCooldown - dt);
+      }
 
       if (state.copCarTimer > 0) {
         state.copCarTimer -= dt;
@@ -1431,9 +1437,15 @@
             h: 30
           };
           if (rectsOverlap(playerBox, carBox)) {
-            state.deathCause = "enemy";
-            die();
-            return;
+            if (state.copHitCooldown <= 0) {
+              state.meter *= 0.5;
+              state.copHitCooldown = 1.2;
+              if (state.meter <= 0) {
+                state.deathCause = "meter";
+                die();
+                return;
+              }
+            }
           }
         }
       }
