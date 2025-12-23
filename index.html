@@ -538,6 +538,9 @@
       copCarTimer: 0,
       copCarSpawnTimer: 0,
       copHitCooldown: 0,
+      pipes: [],
+      popUps: [],
+      gaps: [],
       lastPlatformY: 0,
       dogsActive: false,
       dogsX: 0,
@@ -626,6 +629,9 @@
       state.copCarTimer = 0;
       state.copCarSpawnTimer = 0;
       state.copHitCooldown = 0;
+      state.pipes = [];
+      state.popUps = [];
+      state.gaps = [];
       state.lastPlatformY = 0;
       state.dogsActive = false;
       state.dogsX = 0;
@@ -683,6 +689,7 @@
       state.copCarTimer = 5;
       state.copCarSpawnTimer = 0;
       state.copHitCooldown = 0;
+      state.gaps = [];
       state.lastPlatformY = world.groundY - 160;
       state.levelEndX = levelConfig ? levelConfig.endX : 15600;
       state.goalLabel = levelConfig ? levelConfig.label : "TRAP HOUSE";
@@ -707,6 +714,8 @@
       }
       if (state.level === 1) {
         seedLevelOneLayout();
+        seedLevelOnePipes();
+        seedLevelOneGaps();
       } else {
         seedPlatformsForLevel(state.level);
       }
@@ -721,9 +730,25 @@
       });
       addAccessSteps(platforms[platforms.length - 1]);
       seedStartPlant();
-      spawnStarPack();
-      for (let i = 0; i < 3; i += 1) {
-        spawnObstacle();
+      if (state.level !== 1) {
+        spawnStarPack();
+      }
+      if (state.level === 1) {
+        obstacles.push({
+          x: player.x + 420,
+          y: world.groundY - 30,
+          w: 34,
+          h: 30,
+          type: "roach",
+          speed: 80,
+          vx: -1,
+          phase: Math.random() * Math.PI * 2,
+          hp: 1
+        });
+      } else {
+        for (let i = 0; i < 3; i += 1) {
+          spawnObstacle();
+        }
       }
       for (let i = 0; i < 3; i += 1) {
         spawnObstacle();
@@ -1087,14 +1112,14 @@
 
       const bricks = [
         { x: baseX + 140, y: yLow, w: 140 },
-        { x: baseX + 360, y: yLow, w: 140 },
-        { x: baseX + 560, y: yMid, w: 120 },
-        { x: baseX + 760, y: yMid, w: 180 },
-        { x: baseX + 1040, y: yHigh, w: 180 },
-        { x: baseX + 1280, y: yMid, w: 160 },
-        { x: baseX + 1560, y: yLow, w: 200 },
-        { x: baseX + 1860, y: yMid, w: 140 },
-        { x: baseX + 2100, y: yHigh, w: 160 }
+        { x: baseX + 360, y: yLow, w: 160 },
+        { x: baseX + 600, y: yMid, w: 140 },
+        { x: baseX + 820, y: yMid, w: 200 },
+        { x: baseX + 1140, y: yHigh, w: 180 },
+        { x: baseX + 1400, y: yMid, w: 160 },
+        { x: baseX + 1680, y: yLow, w: 200 },
+        { x: baseX + 1980, y: yMid, w: 160 },
+        { x: baseX + 2240, y: yHigh, w: 160 }
       ];
 
       for (let i = 0; i < bricks.length; i += 1) {
@@ -1103,6 +1128,9 @@
         if (i === 1 || i === 4 || i === 7) {
           plat.isQuestion = true;
           plat.used = false;
+        }
+        if (i === 4 || i === 7) {
+          plat.hasStar = true;
         }
         platforms.push(plat);
         addAccessSteps(plat);
@@ -1125,6 +1153,35 @@
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
         state.lastPlatformY = plat.y;
       }
+    }
+
+    function seedLevelOnePipes() {
+      const baseX = player.x + 520;
+      state.pipes = [
+        { x: baseX + 160, h: 44 },
+        { x: baseX + 700, h: 60 },
+        { x: baseX + 1320, h: 50 }
+      ];
+      state.popUps = [
+        {
+          x: baseX + 700,
+          pipeH: 60,
+          officeH: 48,
+          w: 56,
+          upTime: 2,
+          downTime: 2,
+          start: state.time,
+          rise: 0
+        }
+      ];
+    }
+
+    function seedLevelOneGaps() {
+      state.gaps = [
+        { x: player.x + 760, w: 110 },
+        { x: player.x + 1480, w: 120 },
+        { x: player.x + 2280, w: 120 }
+      ];
     }
 
     function seedStartPlant() {
@@ -1206,6 +1263,11 @@
         a.y < b.y + b.h &&
         a.y + a.h > b.y
       );
+    }
+
+    function isOverGap(x, w) {
+      if (!state.gaps || !state.gaps.length) return false;
+      return state.gaps.some((gap) => x + w > gap.x && x < gap.x + gap.w);
     }
 
     function update(dt) {
@@ -1294,9 +1356,9 @@
             state.copCarSpawnTimer = 5;
           }
         }
-        const step = 189 * dt;
+        const step = 57 * dt;
         const playerAirborne = player.y + player.h < world.groundY - 2;
-        for (let i = 0; i < state.copCars.length; i += 1) {
+        for (let i = state.copCars.length - 1; i >= 0; i -= 1) {
           const car = state.copCars[i];
           const targetX = player.x - 120 - i * 70;
           if (playerAirborne) {
@@ -1307,6 +1369,19 @@
           if (car.x > targetX) {
             car.x = targetX;
           }
+          if (isOverGap(car.x, 90)) {
+            state.copCars.splice(i, 1);
+          }
+        }
+      }
+
+      for (const pop of state.popUps) {
+        const cycle = pop.upTime + pop.downTime;
+        const phase = (state.time - pop.start) % cycle;
+        if (phase < pop.upTime) {
+          pop.rise = pop.officeH * (phase / pop.upTime);
+        } else {
+          pop.rise = 0;
         }
       }
 
@@ -1548,10 +1623,16 @@
         }
       }
 
-      if (!landed && player.y + player.h >= world.groundY) {
+      if (!landed && player.y + player.h >= world.groundY && !isOverGap(player.x, player.w)) {
         player.y = world.groundY - player.h;
         player.vy = 0;
         landed = true;
+      }
+
+      if (player.y > world.height + 200) {
+        state.deathCause = "enemy";
+        die();
+        return;
       }
 
       for (const plat of platforms) {
@@ -1628,6 +1709,24 @@
             state.deathCause = "enemy";
             die();
             return;
+          }
+        }
+      }
+      if (state.popUps.length) {
+        for (const pop of state.popUps) {
+          if (pop.rise < 8) continue;
+          const officeBox = {
+            x: pop.x - pop.w * 0.5,
+            y: world.groundY - pop.pipeH - pop.rise,
+            w: pop.w,
+            h: pop.rise
+          };
+          if (rectsOverlap(playerBox, officeBox)) {
+            if (state.invincibleTimer <= 0) {
+              state.deathCause = "enemy";
+              die();
+              return;
+            }
           }
         }
       }
@@ -1909,7 +2008,26 @@
       });
 
       ctx.fillStyle = "#2c263a";
-      ctx.fillRect(0, world.groundY, world.width, world.height - world.groundY);
+      if (state.gaps && state.gaps.length && state.level === 1) {
+        const viewStart = state.cameraX - 40;
+        const viewEnd = state.cameraX + world.width + 40;
+        const gaps = state.gaps.slice().sort((a, b) => a.x - b.x);
+        let cursor = viewStart;
+        for (const gap of gaps) {
+          const gapStart = Math.max(gap.x, viewStart);
+          const gapEnd = Math.min(gap.x + gap.w, viewEnd);
+          if (gapEnd <= viewStart || gapStart >= viewEnd) continue;
+          if (gapStart > cursor) {
+            ctx.fillRect(cursor - state.cameraX, world.groundY, gapStart - cursor, world.height - world.groundY);
+          }
+          cursor = Math.max(cursor, gapEnd);
+        }
+        if (cursor < viewEnd) {
+          ctx.fillRect(cursor - state.cameraX, world.groundY, viewEnd - cursor, world.height - world.groundY);
+        }
+      } else {
+        ctx.fillRect(0, world.groundY, world.width, world.height - world.groundY);
+      }
 
       ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
       ctx.lineWidth = 2;
@@ -1959,6 +2077,40 @@
           }
         }
       }
+    }
+
+    function drawPipe(pipe) {
+      const x = pipe.x - state.cameraX;
+      const y = world.groundY - pipe.h;
+      ctx.save();
+      ctx.fillStyle = "#2f9e5f";
+      ctx.fillRect(x, y, 70, pipe.h);
+      ctx.fillStyle = "#3fd47f";
+      ctx.fillRect(x - 6, y - 12, 82, 16);
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, 70, pipe.h);
+      ctx.strokeRect(x - 6, y - 12, 82, 16);
+      ctx.restore();
+    }
+
+    function drawPopUp(pop) {
+      if (pop.rise <= 0) return;
+      const x = pop.x - state.cameraX;
+      const y = world.groundY - pop.pipeH - pop.rise;
+      ctx.save();
+      ctx.fillStyle = "#1f2a44";
+      ctx.fillRect(x - pop.w * 0.5, y, pop.w, pop.rise);
+      ctx.fillStyle = "#f6f1e8";
+      ctx.fillRect(x - pop.w * 0.4, y + 8, pop.w * 0.8, Math.max(10, pop.rise - 16));
+      ctx.strokeStyle = "rgba(0,0,0,0.5)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - pop.w * 0.5, y, pop.w, pop.rise);
+      ctx.fillStyle = "#0f0f14";
+      ctx.font = "bold 8px \"Trebuchet MS\", sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("POLICE", x, y + Math.min(16, pop.rise - 4));
+      ctx.restore();
     }
 
     function drawTrapHouse() {
@@ -2487,6 +2639,14 @@
           w: plat.w,
           h: plat.h
         });
+      }
+
+      for (const pipe of state.pipes) {
+        drawPipe(pipe);
+      }
+
+      for (const pop of state.popUps) {
+        drawPopUp(pop);
       }
 
       ctx.shadowColor = "rgba(255, 178, 0, 0.35)";
