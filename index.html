@@ -376,6 +376,8 @@
       billManH: 90,
       billRocketTimer: 0,
       billFollowUpTimer: 0,
+      billJumpTimer: 0,
+      billJumpOffset: 0,
       voiceEnabled: true,
       spokenStart: false
     };
@@ -435,6 +437,8 @@
       state.billManHp = 10;
       state.billRocketTimer = 0;
       state.billFollowUpTimer = 0;
+      state.billJumpTimer = 0;
+      state.billJumpOffset = 0;
       state.spokenStart = false;
       obstacles.length = 0;
       platforms.length = 0;
@@ -768,12 +772,13 @@
       if (state.billManActive) {
         const targetDir = player.x > state.billManX ? 1 : -1;
         state.billManX += targetDir * 90 * dt;
-        state.billManY = world.groundY - state.billManH;
+        state.billManY = world.groundY - state.billManH - state.billJumpOffset;
 
         if (state.time - state.billRocketTimer >= 3) {
+          const targetY = player.y + player.h * 0.5;
           billRockets.push({
             x: state.billManX,
-            y: state.billManY + 36,
+            y: targetY,
             r: 10,
             vx: player.x > state.billManX ? 260 : -260,
             life: 4
@@ -791,6 +796,14 @@
             life: 3
           });
           state.billFollowUpTimer = 0;
+        }
+
+        if (state.time - state.billJumpTimer >= 4.5) {
+          state.billJumpTimer = state.time;
+          state.billJumpOffset = 32;
+        }
+        if (state.billJumpOffset > 0) {
+          state.billJumpOffset = Math.max(0, state.billJumpOffset - 120 * dt);
         }
       }
 
@@ -949,6 +962,29 @@
         }
       }
 
+      for (let i = billRockets.length - 1; i >= 0; i -= 1) {
+        const rocket = billRockets[i];
+        for (let j = fireballs.length - 1; j >= 0; j -= 1) {
+          const fb = fireballs[j];
+          if (Math.hypot(rocket.x - fb.x, rocket.y - fb.y) < rocket.r + fb.r + 4) {
+            billRockets.splice(i, 1);
+            fireballs.splice(j, 1);
+            break;
+          }
+        }
+      }
+
+      for (let i = billFireballs.length - 1; i >= 0; i -= 1) {
+        const shot = billFireballs[i];
+        for (let j = fireballs.length - 1; j >= 0; j -= 1) {
+          const fb = fireballs[j];
+          if (Math.hypot(shot.x - fb.x, shot.y - fb.y) < shot.r + fb.r + 4) {
+            billFireballs.splice(i, 1);
+            fireballs.splice(j, 1);
+            break;
+          }
+        }
+      }
       for (let i = billRockets.length - 1; i >= 0; i -= 1) {
         const shot = billRockets[i];
         const dx = player.x + player.w * 0.5 - shot.x;
