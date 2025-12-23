@@ -455,7 +455,7 @@
       state.levelEndX = state.level === 2 ? 9000 : 7800;
       state.goalLabel = state.level === 2 ? "ROACH MOTEL" : "TRAP HOUSE";
       if (state.level === 1) {
-        state.billManX = state.levelEndX * 0.5;
+        state.billManX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManY = world.groundY - 84;
       }
       seedPlatformsForLevel(state.level);
@@ -760,7 +760,7 @@
         state.lastCollectible = state.time;
       }
 
-      if (state.level === 1 && !state.billManActive && player.x >= state.billManX - 200) {
+      if (state.level === 1 && !state.billManActive && player.x >= state.billManX - world.width * 0.9) {
         state.billManActive = true;
         state.billRocketTimer = state.time;
       }
@@ -770,7 +770,7 @@
         state.billManX += targetDir * 90 * dt;
         state.billManY = world.groundY - state.billManH;
 
-        if (state.time - state.billRocketTimer >= 4) {
+        if (state.time - state.billRocketTimer >= 3) {
           billRockets.push({
             x: state.billManX,
             y: state.billManY + 36,
@@ -779,7 +779,7 @@
             life: 4
           });
           state.billRocketTimer = state.time;
-          state.billFollowUpTimer = state.time + 2;
+          state.billFollowUpTimer = state.time + 1;
         }
         if (state.billFollowUpTimer > 0 && state.time >= state.billFollowUpTimer) {
           billFireballs.push({
