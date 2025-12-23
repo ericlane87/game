@@ -42,26 +42,24 @@
     }
 
     .is-touch #stage {
-      padding-bottom: 132px;
+      padding-bottom: 20vh;
     }
 
     .is-touch canvas {
-      height: calc(100% - 132px);
+      height: calc(100% - 20vh);
     }
 
     @media (max-height: 420px) {
       .is-touch #stage {
-        padding-bottom: 96px;
+        padding-bottom: 24vh;
       }
 
       .is-touch canvas {
-        height: calc(100% - 96px);
+        height: calc(100% - 24vh);
       }
 
       #touch-controls {
-        bottom: 6px;
-        left: 8px;
-        right: 8px;
+        bottom: 10px;
       }
 
       #dpad {
@@ -245,7 +243,7 @@
     }
 
     #touch-controls {
-      position: absolute;
+      position: fixed;
       left: 16px;
       right: 16px;
       bottom: 16px;
@@ -347,7 +345,6 @@
     }
 
     .is-touch #touch-controls {
-      position: fixed;
       display: flex;
     }
 
