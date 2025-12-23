@@ -516,6 +516,7 @@
       billManH: 90,
       billManMidX: 0,
       billManEndX: 0,
+      levelOneBillTriggerX: 0,
       billRocketTimer: 0,
       billFollowUpTimer: 0,
       billJumpTimer: 0,
@@ -693,11 +694,13 @@
         state.billManActive = false;
         state.billManX = state.billManMidX;
         state.billManY = world.groundY - 84;
+        state.levelOneBillTriggerX = 0;
       } else {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = 0;
         state.billManX = state.billManMidX;
         state.billManY = world.groundY - 84;
+        state.levelOneBillTriggerX = 0;
       }
       if (state.level === 2) {
         state.copBossActive = true;
@@ -717,6 +720,55 @@
           hasStar: false
         });
         addAccessSteps(platforms[platforms.length - 1]);
+      }
+      if (state.level === 1) {
+        platforms.push({
+          x: player.x + 160,
+          y: world.groundY - 140,
+          w: 52,
+          h: 14,
+          isQuestion: true,
+          used: false,
+          hasStar: true,
+          spawnsPlant: true
+        });
+        const step = createPlatform(player.x + 260, world.groundY - 60, 46, 14);
+        step.tint = "#c54b4b";
+        platforms.push(step);
+        const upper = createPlatform(player.x + 330, world.groundY - 140, 4 * 36, 14);
+        platforms.push(upper);
+        state.levelOneBillTriggerX = upper.x + upper.w + 40;
+        collectibles.push(
+          { x: upper.x + upper.w * 0.32, y: upper.y - 24, r: 10 },
+          { x: upper.x + upper.w * 0.68, y: upper.y - 24, r: 10 }
+        );
+        obstacles.push({
+          x: player.x + 260,
+          y: world.groundY - 30,
+          w: 34,
+          h: 30,
+          type: "roach",
+          speed: 80,
+          vx: -1,
+          phase: Math.random() * Math.PI * 2,
+          hp: 1
+        });
+        const step2 = createPlatform(player.x + 540, world.groundY - 60, 46, 14);
+        step2.tint = "#c54b4b";
+        platforms.push(step2);
+        const upper2 = createPlatform(player.x + 610, world.groundY - 140, 4 * 36, 14);
+        platforms.push(upper2);
+        obstacles.push({
+          x: upper2.x + 30,
+          y: upper2.y - 30,
+          w: 34,
+          h: 30,
+          type: "roach",
+          speed: 80,
+          vx: -1,
+          phase: Math.random() * Math.PI * 2,
+          hp: 1
+        });
       }
       seedStartPlant();
       if (state.level !== 1) {
@@ -1241,12 +1293,28 @@
         }));
       }
 
-      if (state.level <= 2 && state.billManStage === 0 && player.x >= state.billManMidX - world.width * 0.9) {
+      if (state.level === 2 && state.billManStage === 0 && player.x >= state.billManMidX - world.width * 0.9) {
         state.billManActive = true;
         state.billManStage = 1;
         state.billManHp = 20;
         state.billManX = state.billManMidX;
         state.billRocketTimer = state.time;
+      }
+      if (state.level === 1 && state.billManStage === 1 && !state.billManActive && player.x >= state.levelOneBillTriggerX + 120) {
+        state.billManActive = true;
+        state.billManStage = 5;
+        state.billManHp = 20;
+        state.billManX = player.x + world.width * 0.6;
+        state.billRocketTimer = state.time;
+      }
+
+      if (state.level === 1 && state.billManStage === 0 && player.x >= state.levelOneBillTriggerX) {
+        state.billManActive = true;
+        state.billManStage = 1;
+        state.billManHp = 20;
+        state.billManX = player.x + world.width * 0.6;
+        state.billRocketTimer = state.time;
+        state.levelOneBillTriggerX = Number.POSITIVE_INFINITY;
       }
 
       if (state.copCarActive) {
@@ -1530,7 +1598,14 @@
             player.vy = 0;
             if (plat.isQuestion && !plat.used) {
               plat.used = true;
-              if (plat.hasStar) {
+              if (plat.hasStar && plat.spawnsPlant) {
+                plants.push({
+                  x: plat.x + plat.w * 0.5,
+                  y: plat.y - 20,
+                  r: 12,
+                  vy: -280
+                });
+              } else if (plat.hasStar) {
                 stars.push({
                   x: plat.x + plat.w * 0.5,
                   y: plat.y - 24,
@@ -1788,8 +1863,17 @@
                 state.billManStage = 2;
               } else if (state.billManStage === 3) {
                 state.billManStage = 4;
+              } else if (state.billManStage === 5) {
+                state.billManStage = 6;
+                stars.push({
+                  x: state.billManX,
+                  y: state.billManY - 24,
+                  r: 12
+                });
               }
-              maybeDropStar(state.billManX, state.billManY - 20);
+              if (state.billManStage !== 6) {
+                maybeDropStar(state.billManX, state.billManY - 20);
+              }
               break;
             }
           }
@@ -1828,6 +1912,15 @@
 
       for (let i = plants.length - 1; i >= 0; i -= 1) {
         const plant = plants[i];
+        if (typeof plant.vy === "number") {
+          plant.vy += 900 * dt;
+          plant.y += plant.vy * dt;
+          const groundY = world.groundY - plant.r * 0.6;
+          if (plant.y > groundY) {
+            plant.y = groundY;
+            plant.vy = 0;
+          }
+        }
         const dx = player.x + player.w / 2 - plant.x;
         const dy = player.y + player.h / 2 - plant.y;
         const dist = Math.hypot(dx, dy);
@@ -1889,11 +1982,13 @@
     }
 
     function drawPlatform(plat) {
-      ctx.fillStyle = plat.isQuestion && plat.hasStar && !plat.used
-        ? "#ffd166"
-        : plat.isQuestion && !plat.used
-          ? "#f2c94c"
-          : "#8b4b2b";
+      ctx.fillStyle = plat.tint
+        ? plat.tint
+        : plat.isQuestion && plat.hasStar && !plat.used
+          ? "#ffd166"
+          : plat.isQuestion && !plat.used
+            ? "#f2c94c"
+            : "#8b4b2b";
       ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
 
       ctx.strokeStyle = "rgba(255, 214, 160, 0.35)";
