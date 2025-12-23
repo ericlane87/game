@@ -470,8 +470,16 @@
       overlay.classList.add("hidden");
       restartBtn.textContent = "New Game";
       state.initialDropTimer = 3;
-      state.levelEndX = state.level === 2 ? 9000 : 7800;
-      state.goalLabel = state.level === 2 ? "ROACH MOTEL" : "TRAP HOUSE";
+      if (state.level === 1) {
+        state.levelEndX = 7800;
+        state.goalLabel = "TRAP HOUSE";
+      } else if (state.level === 2) {
+        state.levelEndX = 9000;
+        state.goalLabel = "ROACH MOTEL";
+      } else {
+        state.levelEndX = 9800;
+        state.goalLabel = "BIRD NEST";
+      }
       if (state.level === 1) {
         state.billManX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManY = world.groundY - 84;
@@ -508,7 +516,7 @@
             : "You got caught.";
       deathReason.textContent = `${reasonText} Meter: ${Math.round(meterValue)}%`;
       if (state.deathCause === "win") {
-        restartBtn.textContent = state.level === 1 ? "Next Level" : "New Game";
+        restartBtn.textContent = state.level === 3 ? "New Game" : "Next Level";
       } else {
         restartBtn.textContent = "New Game";
       }
@@ -668,9 +676,10 @@
 
     function spawnObstacle() {
       const roll = Math.random();
-      const isHousing = state.level === 2 ? roll < 0.35 : roll < 0.2;
+      const isHousing = state.level >= 2 ? roll < 0.3 : roll < 0.2;
       const isHeli = state.level === 2 && !isHousing && roll < 0.55;
-      const size = isHeli ? 38 : isHousing ? 46 : 28 + Math.random() * 10;
+      const isBird = state.level === 3 && !isHousing && roll < 0.7;
+      const size = isHeli ? 38 : isBird ? 32 : isHousing ? 46 : 28 + Math.random() * 10;
       const width = isHousing ? size * 0.9 : size * 1.2;
       const spawnX = Math.max(
         state.cameraX + world.width + 180,
@@ -678,8 +687,8 @@
       );
       const onPlatform = platforms.length && Math.random() < 0.6;
       let y = world.groundY - size;
-      if (isHeli) {
-        y = world.groundY - 220 - Math.random() * 120;
+      if (isHeli || isBird) {
+        y = world.groundY - 220 - Math.random() * 140;
       } else if (onPlatform) {
         const plat = platforms[Math.floor(Math.random() * platforms.length)];
         y = plat.y - size;
@@ -689,8 +698,8 @@
         y,
         w: width,
         h: size,
-        type: isHeli ? "heli" : isHousing ? "housing" : "roach",
-        speed: (isHeli ? 120 : isHousing ? 70 : 90) + state.distance * 0.03 + Math.random() * 35,
+        type: isHeli ? "heli" : isBird ? "bird" : isHousing ? "housing" : "roach",
+        speed: (isHeli ? 120 : isBird ? 140 : isHousing ? 70 : 90) + state.distance * 0.03 + Math.random() * 35,
         vx: -1,
         phase: Math.random() * Math.PI * 2,
         hp: isHeli ? 2 + Math.floor(Math.random() * 2) : 1
@@ -721,9 +730,11 @@
     function spawnPlatform() {
       const w = 140 + Math.random() * 140;
       const h = 14;
-      const yOptions = state.level === 2
-        ? [world.groundY - 140, world.groundY - 220, world.groundY - 300, world.groundY - 380]
-        : [world.groundY - 120, world.groundY - 200, world.groundY - 280, world.groundY - 340];
+      const yOptions = state.level === 3
+        ? [world.groundY - 160, world.groundY - 240, world.groundY - 320, world.groundY - 400]
+        : state.level === 2
+          ? [world.groundY - 140, world.groundY - 220, world.groundY - 300, world.groundY - 380]
+          : [world.groundY - 120, world.groundY - 200, world.groundY - 280, world.groundY - 340];
       const y = yOptions[Math.floor(Math.random() * yOptions.length)];
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
@@ -749,28 +760,12 @@
     }
 
     function seedPlatformsForLevel(level) {
-      const baseX = player.x + 220;
-      const layouts = level === 2
-        ? [
-            { x: baseX, y: world.groundY - 160, w: 200 },
-            { x: baseX + 280, y: world.groundY - 260, w: 180 },
-            { x: baseX + 560, y: world.groundY - 200, w: 220 },
-            { x: baseX + 860, y: world.groundY - 320, w: 160 },
-            { x: baseX + 1120, y: world.groundY - 240, w: 240 }
-          ]
-        : [
-            { x: baseX, y: world.groundY - 140, w: 220 },
-            { x: baseX + 260, y: world.groundY - 220, w: 180 },
-            { x: baseX + 520, y: world.groundY - 180, w: 240 },
-            { x: baseX + 820, y: world.groundY - 300, w: 180 },
-            { x: baseX + 1060, y: world.groundY - 220, w: 220 }
-          ];
-      layouts.forEach((plat) => {
-        platforms.push({ x: plat.x, y: plat.y, w: plat.w, h: 14 });
-        state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
-      });
-      for (let i = 0; i < 4; i += 1) {
+      const count = level === 3 ? 9 : 7;
+      for (let i = 0; i < count; i += 1) {
         spawnPlatform();
+      }
+      for (let i = 0; i < 2; i += 1) {
+        spawnLowPlatformChain();
       }
     }
 
@@ -787,7 +782,11 @@
         state.cameraX + world.width + 220,
         state.lastCollectibleX + 320 + Math.random() * 260
       );
-      const highY = state.level === 2 ? world.groundY - 360 : world.groundY - 320;
+      const highY = state.level === 3
+        ? world.groundY - 380
+        : state.level === 2
+          ? world.groundY - 360
+          : world.groundY - 320;
       plants.push({
         x: spawnX,
         y: highY,
@@ -929,6 +928,23 @@
             y: targetY,
             r: 6,
             vx: targetDir * 260,
+            life: 3
+          });
+        }
+        state.enemyShotTimer = state.time;
+      }
+
+      if (state.level === 3 && state.time - state.enemyShotTimer >= 3.5) {
+        const birds = obstacles.filter((obs) => obs.type === "bird");
+        if (birds.length) {
+          const shooter = birds[Math.floor(Math.random() * birds.length)];
+          const targetDir = player.x > shooter.x ? 1 : -1;
+          const targetY = player.y + player.h * 0.5;
+          enemyShots.push({
+            x: shooter.x,
+            y: targetY,
+            r: 5,
+            vx: targetDir * 300,
             life: 3
           });
         }
@@ -1325,6 +1341,9 @@
       if (state.goalLabel === "ROACH MOTEL") {
         ctx.fillText("ROACH", x + width / 2, y + 22);
         ctx.fillText("MOTEL", x + width / 2, y + 38);
+      } else if (state.goalLabel === "BIRD NEST") {
+        ctx.fillText("BIRD", x + width / 2, y + 22);
+        ctx.fillText("NEST", x + width / 2, y + 38);
       } else {
         ctx.fillText("TRAP HOUSE", x + width / 2, y + 28);
       }
@@ -1523,6 +1542,40 @@
       ctx.restore();
     }
 
+    function drawBird(obs) {
+      const screenX = obs.x - state.cameraX;
+      const { y, w, h } = obs;
+      ctx.save();
+      ctx.translate(screenX, y);
+
+      const flap = Math.sin(state.time * 12 + obs.phase) * 6;
+      ctx.fillStyle = "#3c3f4a";
+      ctx.beginPath();
+      ctx.ellipse(w * 0.5, h * 0.55, w * 0.4, h * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#1d2028";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, h * 0.45);
+      ctx.lineTo(w * 0.05, h * 0.25 - flap);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w * 0.8, h * 0.45);
+      ctx.lineTo(w * 0.95, h * 0.25 + flap);
+      ctx.stroke();
+
+      ctx.fillStyle = "#f2c94c";
+      ctx.beginPath();
+      ctx.moveTo(w * 0.6, h * 0.6);
+      ctx.lineTo(w * 0.9, h * 0.7);
+      ctx.lineTo(w * 0.62, h * 0.75);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
     function drawBillMan() {
       if (!state.billManActive || state.billManHp <= 0) return;
       const w = state.billManW;
@@ -1699,6 +1752,8 @@
           drawHousingEnemy(obs);
         } else if (obs.type === "heli") {
           drawHelicopter(obs);
+        } else if (obs.type === "bird") {
+          drawBird(obs);
         } else {
           drawRoach(obs);
         }
@@ -1912,7 +1967,8 @@
       restartBtn.addEventListener("click", () => {
         hasUserInteracted = true;
         if (state.deathCause === "win") {
-          resetGame(state.level === 1 ? 2 : 1);
+          const nextLevel = state.level === 1 ? 2 : state.level === 2 ? 3 : 1;
+          resetGame(nextLevel);
         } else {
           resetGame(state.level);
         }
