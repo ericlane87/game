@@ -929,6 +929,22 @@
       };
     }
 
+    function addAccessSteps(plat) {
+      if (plat.y >= world.groundY - 200) return;
+      const stepCount = 2;
+      for (let i = 1; i <= stepCount; i += 1) {
+        const step = createPlatform(
+          plat.x - i * 90,
+          Math.min(world.groundY - 120, plat.y + i * 80),
+          70,
+          12
+        );
+        platforms.push(step);
+        state.lastPlatformX = Math.max(state.lastPlatformX, step.x + step.w);
+        state.lastPlatformY = step.y;
+      }
+    }
+
     function spawnCollectible() {
       const r = 10;
       const spawnX = Math.max(
@@ -970,9 +986,11 @@
         state.cameraX + world.width + 160,
         state.lastPlatformX + 200 + Math.random() * 160
       );
-      platforms.push(createPlatform(spawnX, y, w, h));
+      const plat = createPlatform(spawnX, y, w, h);
+      platforms.push(plat);
       state.lastPlatformX = spawnX;
       state.lastPlatformY = y;
+      addAccessSteps(plat);
     }
 
     function spawnLowPlatformChain() {
@@ -985,7 +1003,9 @@
       for (let i = 0; i < 2; i += 1) {
         const w = widths[Math.floor(Math.random() * widths.length)];
         const x = baseX + i * (w + 90);
-        platforms.push(createPlatform(x, y, w, 14));
+        const plat = createPlatform(x, y, w, 14);
+        platforms.push(plat);
+        addAccessSteps(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, x + w);
       }
       state.lastPlatformY = y;
@@ -1057,6 +1077,7 @@
         plat.hasStar = true;
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
+        addAccessSteps(plat);
         if (y < world.groundY - 240) {
           const stepPlat = createPlatform(plat.x - 120, y + 120, 90, 14);
           platforms.push(stepPlat);
@@ -1172,7 +1193,9 @@
         for (let i = 0; i < state.copCars.length; i += 1) {
           const car = state.copCars[i];
           const targetX = player.x - 120 - i * 70;
-          if (!playerAirborne && targetX > car.x) {
+          if (playerAirborne) {
+            car.x += step;
+          } else if (targetX > car.x) {
             car.x = Math.min(targetX, car.x + step);
           }
           if (car.x > targetX) {
