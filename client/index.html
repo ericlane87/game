@@ -2683,6 +2683,39 @@
     }
 
     if (isTouch) {
+      const activeTouches = {
+        left: new Set(),
+        right: new Set()
+      };
+
+      function syncTouchDirections() {
+        input.left = activeTouches.left.size > 0;
+        input.right = activeTouches.right.size > 0;
+      }
+
+      function bindTouchDirection(btn, dir) {
+        if (!btn) return;
+        btn.addEventListener("touchstart", (event) => {
+          event.preventDefault();
+          hasUserInteracted = true;
+          for (const touch of event.changedTouches) {
+            activeTouches[dir].add(touch.identifier);
+          }
+          syncTouchDirections();
+        }, { passive: false });
+        const clearTouches = (event) => {
+          for (const touch of event.changedTouches) {
+            activeTouches[dir].delete(touch.identifier);
+          }
+          syncTouchDirections();
+        };
+        btn.addEventListener("touchend", clearTouches, { passive: false });
+        btn.addEventListener("touchcancel", clearTouches, { passive: false });
+      }
+
+      bindTouchDirection(dpadLeft, "left");
+      bindTouchDirection(dpadRight, "right");
+
       bindHold(dpadLeft, () => {
         input.left = true;
         input.right = false;
@@ -2706,6 +2739,22 @@
       }, () => {});
 
       bindHold(dpadDown, () => {}, () => {});
+
+      if (fireBtn) {
+        fireBtn.addEventListener("touchstart", (event) => {
+          event.preventDefault();
+          hasUserInteracted = true;
+          queueFire();
+        }, { passive: false });
+      }
+
+      if (burstBtn) {
+        burstBtn.addEventListener("touchstart", (event) => {
+          event.preventDefault();
+          hasUserInteracted = true;
+          releaseBurst();
+        }, { passive: false });
+      }
     }
 
     resize();
