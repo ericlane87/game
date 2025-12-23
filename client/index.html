@@ -679,7 +679,7 @@
       player.jumpsLeft = 1;
       overlay.classList.add("hidden");
       restartBtn.textContent = "New Game";
-      state.initialDropTimer = 3;
+      state.initialDropTimer = state.level === 1 ? 0 : 3;
       state.copCarTimer = 5;
       state.copCarSpawnTimer = 0;
       state.copHitCooldown = 0;
@@ -721,12 +721,12 @@
       seedStartPlant();
       if (state.level !== 1) {
         spawnStarPack();
-      }
-      for (let i = 0; i < 3; i += 1) {
-        spawnObstacle();
-      }
-      for (let i = 0; i < 3; i += 1) {
-        spawnObstacle();
+        for (let i = 0; i < 3; i += 1) {
+          spawnObstacle();
+        }
+        for (let i = 0; i < 3; i += 1) {
+          spawnObstacle();
+        }
       }
 
       if (hasUserInteracted) {
@@ -921,6 +921,7 @@
     }
 
     function spawnObstacle() {
+      if (state.level === 1) return;
       const roll = Math.random();
       const isHousing = state.level >= 2 ? roll < 0.3 : roll < 0.2;
       const isHeli = state.level === 2 && !isHousing && roll < 0.55;
@@ -985,6 +986,7 @@
     }
 
     function spawnCollectible() {
+      if (state.level === 1) return;
       const r = 10;
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
@@ -1098,19 +1100,7 @@
     }
 
     function spawnPlant() {
-      if (state.level === 1) {
-        const spawnX = Math.max(
-          state.cameraX + world.width + 220,
-          state.lastCollectibleX + 320 + Math.random() * 260
-        );
-        plants.push({
-          x: spawnX,
-          y: world.groundY - 60,
-          r: 14
-        });
-        state.lastCollectibleX = spawnX;
-        return;
-      }
+      if (state.level === 1) return;
       const spawnX = Math.max(
         state.cameraX + world.width + 220,
         state.lastCollectibleX + 320 + Math.random() * 260
