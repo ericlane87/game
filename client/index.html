@@ -238,21 +238,38 @@
     }
 
     #action-buttons button {
-      width: 96px;
+      width: 92px;
       height: 62px;
+      font-size: 20px;
     }
 
     #dpad {
       display: grid;
-      grid-template-columns: 70px 70px;
-      grid-template-rows: 70px 70px;
-      gap: 10px;
+      grid-template-columns: 64px 64px 64px;
+      grid-template-rows: 64px 64px 64px;
+      grid-template-areas:
+        ". up ."
+        "left center right"
+        ". down .";
+      gap: 8px;
     }
 
     #dpad button {
-      width: 70px;
-      height: 70px;
+      width: 64px;
+      height: 64px;
       border-radius: 16px;
+    }
+    #dpad-up {
+      grid-area: up;
+    }
+    #dpad-left {
+      grid-area: left;
+    }
+    #dpad-right {
+      grid-area: right;
+    }
+    #dpad-down {
+      grid-area: down;
     }
 
     #touch-controls button:active {
@@ -301,7 +318,7 @@
         <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
         <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
         <div id="death-reason"></div>
-        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, G for burst, right click for belt. Mobile: D-pad to move/jump, Fire to shoot, Burst to release flower power.</div>
+        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, G for burst, right click for belt. Mobile: D-pad to move/jump, A to shoot, B to release flower power.</div>
         <button id="restart-btn" type="button">New Game</button>
       </div>
     </div>
@@ -311,10 +328,11 @@
         <button id="dpad-up" type="button">Up</button>
         <button id="dpad-right" type="button">Right</button>
         <button id="dpad-left" type="button">Left</button>
+        <button id="dpad-down" type="button">Down</button>
       </div>
       <div id="action-buttons">
-        <button id="fire-btn" type="button">Fire</button>
-        <button id="burst-btn" type="button">Burst</button>
+        <button id="fire-btn" type="button">A</button>
+        <button id="burst-btn" type="button">B</button>
       </div>
     </div>
   </div>
@@ -334,6 +352,7 @@
     const dpadUp = document.getElementById("dpad-up");
     const dpadLeft = document.getElementById("dpad-left");
     const dpadRight = document.getElementById("dpad-right");
+    const dpadDown = document.getElementById("dpad-down");
     const restartBtn = document.getElementById("restart-btn");
     const voiceToggle = document.getElementById("voice-toggle");
 
@@ -2636,6 +2655,8 @@
           state.spokenStart = true;
         }
       }, () => {});
+
+      bindHold(dpadDown, () => {}, () => {});
     }
 
     resize();
