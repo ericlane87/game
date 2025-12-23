@@ -1039,10 +1039,10 @@
       if (state.copCarActive) {
         const targetX = player.x - 120;
         const step = 210 * dt;
-        if (state.copCarX < targetX) {
+        if (targetX > state.copCarX) {
           state.copCarX = Math.min(targetX, state.copCarX + step);
         } else {
-          state.copCarX = Math.max(targetX, state.copCarX - step);
+          state.copCarX += step;
         }
       }
 
