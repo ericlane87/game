@@ -431,6 +431,7 @@
       copCars: [],
       copCarTimer: 0,
       copCarSpawnTimer: 0,
+      lastPlatformY: 0,
       dogsActive: false,
       dogsX: 0,
       dogs: [],
@@ -517,6 +518,7 @@
       state.copCars = [];
       state.copCarTimer = 0;
       state.copCarSpawnTimer = 0;
+      state.lastPlatformY = 0;
       state.dogsActive = false;
       state.dogsX = 0;
       state.dogs = [];
@@ -572,6 +574,7 @@
       state.initialDropTimer = 3;
       state.copCarTimer = 5;
       state.copCarSpawnTimer = 0;
+      state.lastPlatformY = world.groundY - 160;
       state.levelEndX = levelConfig ? levelConfig.endX : 15600;
       state.goalLabel = levelConfig ? levelConfig.label : "TRAP HOUSE";
       if (state.level === 1) {
@@ -878,13 +881,21 @@
         : state.level === 2
           ? [world.groundY - 140, world.groundY - 220, world.groundY - 300, world.groundY - 380]
           : [world.groundY - 120, world.groundY - 200, world.groundY - 280, world.groundY - 340];
-      const y = yOptions[Math.floor(Math.random() * yOptions.length)];
+      const minY = world.groundY - 360;
+      const maxY = world.groundY - 120;
+      let y = yOptions[Math.floor(Math.random() * yOptions.length)];
+      if (Math.abs(y - state.lastPlatformY) > 140) {
+        const dir = y > state.lastPlatformY ? 1 : -1;
+        y = state.lastPlatformY + dir * 120;
+      }
+      y = Math.max(minY, Math.min(maxY, y));
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
         state.lastPlatformX + 200 + Math.random() * 160
       );
       platforms.push(createPlatform(spawnX, y, w, h));
       state.lastPlatformX = spawnX;
+      state.lastPlatformY = y;
     }
 
     function spawnLowPlatformChain() {
@@ -900,6 +911,7 @@
         platforms.push(createPlatform(x, y, w, 14));
         state.lastPlatformX = Math.max(state.lastPlatformX, x + w);
       }
+      state.lastPlatformY = y;
     }
 
     function seedPlatformsForLevel(level) {
@@ -925,14 +937,28 @@
         state.cameraX + world.width + 220,
         state.lastCollectibleX + 320 + Math.random() * 260
       );
-      const highY = state.level === 3
-        ? world.groundY - 380
-        : state.level === 2
-          ? world.groundY - 360
-          : world.groundY - 320;
+      const nearby = platforms.filter((plat) =>
+        Math.abs(plat.x + plat.w * 0.5 - spawnX) < 180
+      );
+      let targetPlat = nearby.length
+        ? nearby[Math.floor(Math.random() * nearby.length)]
+        : null;
+      if (!targetPlat) {
+        const y = state.level >= 2 ? world.groundY - 220 : world.groundY - 200;
+        targetPlat = createPlatform(spawnX - 40, y, 120, 14);
+        platforms.push(targetPlat);
+        state.lastPlatformX = Math.max(state.lastPlatformX, targetPlat.x + targetPlat.w);
+        state.lastPlatformY = y;
+      }
+      if (targetPlat.y < world.groundY - 240) {
+        const stepPlat = createPlatform(targetPlat.x - 120, targetPlat.y + 120, 100, 14);
+        platforms.push(stepPlat);
+        state.lastPlatformX = Math.max(state.lastPlatformX, stepPlat.x + stepPlat.w);
+        state.lastPlatformY = stepPlat.y;
+      }
       plants.push({
-        x: spawnX,
-        y: highY,
+        x: targetPlat.x + targetPlat.w * 0.5,
+        y: targetPlat.y - 24,
         r: 14
       });
       state.lastCollectibleX = spawnX;
@@ -954,6 +980,12 @@
         plat.hasStar = true;
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
+        if (y < world.groundY - 240) {
+          const stepPlat = createPlatform(plat.x - 120, y + 120, 90, 14);
+          platforms.push(stepPlat);
+          state.lastPlatformX = Math.max(state.lastPlatformX, stepPlat.x + stepPlat.w);
+          state.lastPlatformY = stepPlat.y;
+        }
       }
     }
 
