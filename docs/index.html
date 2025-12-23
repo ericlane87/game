@@ -874,7 +874,7 @@
     function speakGreenThing() {
       if (!state.voiceEnabled) return;
       if (!("speechSynthesis" in window)) return;
-      const utter = new SpeechSynthesisUtterance("Green Thing Time");
+      const utter = new SpeechSynthesisUtterance("Green Thing");
       const voice = selectVoice();
       if (voice) utter.voice = voice;
       utter.rate = 1.0;
@@ -886,7 +886,7 @@
     function speakDeath() {
       if (!state.voiceEnabled) return;
       if (!("speechSynthesis" in window)) return;
-      const utter = new SpeechSynthesisUtterance("they on my ass chat");
+      const utter = new SpeechSynthesisUtterance("They on my ass chat");
       const voice = selectVoice();
       if (voice) utter.voice = voice;
       utter.rate = 1.0;
