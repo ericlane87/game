@@ -506,6 +506,7 @@
       fireMessageTimer: 0,
       deathCause: "",
       initialDropTimer: 0,
+      starsSpawned: 0,
       level: 1,
       levelEndX: 15600,
       goalLabel: "TRAP HOUSE",
@@ -537,6 +538,7 @@
       kidY: 0,
       kidHits: 0,
       kidAlive: true,
+      kidDucking: false,
       kidBurstTimer: 0,
       kidBurstCount: 0,
       lastPlant: 0,
@@ -690,10 +692,11 @@
       overlay.classList.add("hidden");
       restartBtn.textContent = "New Game";
       state.initialDropTimer = state.level === 1 ? 0 : 3;
-      state.copCarTimer = state.level === 1 ? 0 : 5;
+      state.copCarTimer = 5;
       state.copCarSpawnTimer = 0;
       state.copHitCooldown = 0;
       state.lastPlatformY = world.groundY - 160;
+      state.starsSpawned = 0;
       state.levelEndX = levelConfig ? levelConfig.endX : 15600;
       state.goalLabel = levelConfig ? levelConfig.label : "TRAP HOUSE";
       if (state.level === 1) {
@@ -1297,9 +1300,16 @@
     }
 
     function maybeDropStar(x, y) {
+      if (state.starsSpawned >= 3) return;
       if (Math.random() < 0.15) {
-        stars.push({ x, y, r: 12 });
+        spawnStar(x, y);
       }
+    }
+
+    function spawnStar(x, y) {
+      if (state.starsSpawned >= 3) return;
+      stars.push({ x, y, r: 12 });
+      state.starsSpawned += 1;
     }
 
     function rectsOverlap(a, b) {
@@ -1327,7 +1337,8 @@
         state.distance = player.x;
       }
       state.kidX = player.x - 70;
-      state.kidY = world.groundY - 48;
+      state.kidDucking = player.ducking;
+      state.kidY = world.groundY - (state.kidDucking ? 34 : 48);
       if (state.kidX < state.cameraX + 20) {
         state.kidX = state.cameraX + 20;
       }
@@ -1455,7 +1466,7 @@
             state.copCarSpawnTimer = 5;
           }
         }
-        const step = 57 * dt;
+        const step = state.moveSpeed * 0.5 * dt;
       const playerAirborne = player.y + player.h < world.groundY - 2;
       for (let i = state.copCars.length - 1; i >= 0; i -= 1) {
         const car = state.copCars[i];
@@ -1812,11 +1823,7 @@
                   vy: -280
                 });
               } else if (plat.hasStar) {
-                stars.push({
-                  x: plat.x + plat.w * 0.5,
-                  y: plat.y - 24,
-                  r: 12
-                });
+                spawnStar(plat.x + plat.w * 0.5, plat.y - 24);
               }
             }
           }
@@ -1882,7 +1889,7 @@
         x: state.kidX,
         y: state.kidY,
         w: 28,
-        h: 48
+        h: state.kidDucking ? 34 : 48
       };
       if (state.billManActive && state.billManHp > 0) {
         const bossBox = {
@@ -1937,6 +1944,9 @@
 
       for (let i = enemyShots.length - 1; i >= 0; i -= 1) {
         const shot = enemyShots[i];
+        if (player.ducking && shot.y < player.y + player.h * 0.25) {
+          continue;
+        }
         const dx = player.x + player.w * 0.5 - shot.x;
         const dy = player.y + player.h * 0.5 - shot.y;
         if (Math.hypot(dx, dy) < player.w * 0.4 + shot.r) {
@@ -2006,6 +2016,9 @@
 
       for (let i = billFireballs.length - 1; i >= 0; i -= 1) {
         const shot = billFireballs[i];
+        if (player.ducking && shot.y < player.y + player.h * 0.25) {
+          continue;
+        }
         const dx = player.x + player.w * 0.5 - shot.x;
         const dy = player.y + player.h * 0.5 - shot.y;
         if (Math.hypot(dx, dy) < player.w * 0.4 + shot.r) {
@@ -2071,11 +2084,7 @@
                 state.billManStage = 4;
               } else if (state.billManStage === 5) {
                 state.billManStage = 6;
-                stars.push({
-                  x: state.billManX,
-                  y: state.billManY - 24,
-                  r: 12
-                });
+                spawnStar(state.billManX, state.billManY - 24);
               }
               if (state.billManStage !== 6) {
                 maybeDropStar(state.billManX, state.billManY - 20);
@@ -2608,7 +2617,7 @@
       const screenX = state.kidX - state.cameraX;
       const y = state.kidY;
       const w = 28;
-      const h = 48;
+      const h = state.kidDucking ? 34 : 48;
 
       ctx.save();
       ctx.translate(screenX, y);
