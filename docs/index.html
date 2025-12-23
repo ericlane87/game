@@ -500,9 +500,7 @@
       overlay.classList.add("hidden");
       restartBtn.textContent = "New Game";
       state.initialDropTimer = 3;
-      if (state.level === 1) {
-        state.copCarTimer = 5;
-      }
+      state.copCarTimer = 5;
       if (state.level === 1) {
         state.levelEndX = 7800;
         state.goalLabel = "TRAP HOUSE";
@@ -877,6 +875,7 @@
     }
 
     function spawnStarPack() {
+      const spacing = (state.levelEndX - (player.x + 600)) / 4;
       const baseX = player.x + 520;
       const yOptions = [
         world.groundY - 140,
@@ -885,7 +884,7 @@
       ];
       for (let i = 0; i < 3; i += 1) {
         const y = yOptions[i % yOptions.length];
-        const plat = createPlatform(baseX + i * 320, y, 110, 14);
+        const plat = createPlatform(baseX + i * spacing, y, 110, 14);
         plat.isQuestion = true;
         plat.used = false;
         plat.hasStar = true;
@@ -944,7 +943,7 @@
 
       state.cameraX = Math.max(state.cameraX, player.x - world.width * 0.3);
 
-      if (state.level === 1 && state.copCarTimer > 0) {
+      if (state.copCarTimer > 0) {
         state.copCarTimer -= dt;
         if (state.copCarTimer <= 0) {
           state.copCarActive = true;
