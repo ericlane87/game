@@ -41,6 +41,14 @@
       background: transparent;
     }
 
+    .is-touch #stage {
+      padding-bottom: 120px;
+    }
+
+    .is-touch canvas {
+      height: calc(100% - 120px);
+    }
+
     #hud {
       position: absolute;
       top: 44px;
@@ -207,12 +215,12 @@
       position: absolute;
       left: 16px;
       right: 16px;
-      bottom: 12px;
+      bottom: 4px;
       display: none;
       align-items: flex-end;
       justify-content: space-between;
       pointer-events: auto;
-      gap: 16px;
+      gap: 10px;
       touch-action: none;
     }
 
@@ -235,14 +243,14 @@
     #action-buttons {
       display: flex;
       flex-direction: column-reverse;
-      gap: 12px;
+      gap: 8px;
       align-items: flex-end;
     }
 
     #action-buttons button {
-      width: 70px;
-      height: 70px;
-      font-size: 22px;
+      width: 58px;
+      height: 58px;
+      font-size: 18px;
       border-radius: 50%;
       border: 2px solid rgba(255, 255, 255, 0.2);
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -259,22 +267,22 @@
 
     #dpad {
       display: grid;
-      grid-template-columns: 64px 64px 64px;
-      grid-template-rows: 64px 64px 64px;
+      grid-template-columns: 52px 52px 52px;
+      grid-template-rows: 52px 52px 52px;
       grid-template-areas:
         ". up ."
         "left center right"
         ". down .";
-      gap: 8px;
-      padding: 10px;
-      border-radius: 26px;
+      gap: 6px;
+      padding: 6px;
+      border-radius: 20px;
       background: rgba(28, 26, 36, 0.8);
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
     }
 
     #dpad button {
-      width: 64px;
-      height: 64px;
+      width: 52px;
+      height: 52px;
       border-radius: 10px;
       background: rgba(18, 16, 24, 0.95);
     }
@@ -292,8 +300,8 @@
     }
     #dpad-center {
       grid-area: center;
-      width: 64px;
-      height: 64px;
+      width: 52px;
+      height: 52px;
       border-radius: 12px;
       background: rgba(12, 12, 18, 0.95);
       border: 1px solid rgba(255, 255, 255, 0.08);
