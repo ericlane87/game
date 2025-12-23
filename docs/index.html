@@ -387,6 +387,7 @@
       kidHits: 0,
       kidAlive: true,
       lastPlant: 0,
+      invincibleTimer: 0,
       billLabel: "BILL MAN",
       voiceEnabled: true,
       spokenStart: false
@@ -400,6 +401,7 @@
     const enemyShots = [];
     const billRockets = [];
     const billFireballs = [];
+    const stars = [];
     let hasUserInteracted = false;
 
     function resize() {
@@ -452,6 +454,7 @@
       state.lastPlant = 0;
       state.kidHits = 0;
       state.kidAlive = true;
+      state.invincibleTimer = 0;
       state.billLabel = state.level === 2 ? "DFAC" : "BILL MAN";
       state.spokenStart = false;
       obstacles.length = 0;
@@ -462,6 +465,7 @@
       enemyShots.length = 0;
       billRockets.length = 0;
       billFireballs.length = 0;
+      stars.length = 0;
       player.x = 160;
       player.y = world.groundY - player.h;
       player.vy = 0;
@@ -489,6 +493,14 @@
         state.billManY = world.groundY - 84;
       }
       seedPlatformsForLevel(state.level);
+      platforms.push({
+        x: player.x + 240,
+        y: world.groundY - 140,
+        w: 90,
+        h: 14,
+        isQuestion: true,
+        used: false
+      });
       seedStartPlant();
       for (let i = 0; i < 3; i += 1) {
         spawnObstacle();
@@ -722,6 +734,17 @@
       state.lastObstacleX = spawnX;
     }
 
+    function createPlatform(x, y, w, h) {
+      return {
+        x,
+        y,
+        w,
+        h,
+        isQuestion: Math.random() < 0.18,
+        used: false
+      };
+    }
+
     function spawnCollectible() {
       const r = 10;
       const spawnX = Math.max(
@@ -755,7 +778,7 @@
         state.cameraX + world.width + 160,
         state.lastPlatformX + 200 + Math.random() * 160
       );
-      platforms.push({ x: spawnX, y, w, h });
+      platforms.push(createPlatform(spawnX, y, w, h));
       state.lastPlatformX = spawnX;
     }
 
@@ -769,7 +792,7 @@
       for (let i = 0; i < 2; i += 1) {
         const w = widths[Math.floor(Math.random() * widths.length)];
         const x = baseX + i * (w + 90);
-        platforms.push({ x, y, w, h: 14 });
+        platforms.push(createPlatform(x, y, w, 14));
         state.lastPlatformX = Math.max(state.lastPlatformX, x + w);
       }
     }
@@ -1059,6 +1082,26 @@
         landed = true;
       }
 
+      for (const plat of platforms) {
+        const wasBelow = prevY >= plat.y + plat.h - 2;
+        const isRising = player.vy < 0;
+        const withinX = player.x + player.w > plat.x && player.x < plat.x + plat.w;
+        if (wasBelow && isRising && withinX) {
+          if (player.y <= plat.y + plat.h) {
+            player.y = plat.y + plat.h;
+            player.vy = 0;
+            if (plat.isQuestion && !plat.used) {
+              plat.used = true;
+              stars.push({
+                x: plat.x + plat.w * 0.5,
+                y: plat.y - 24,
+                r: 12
+              });
+            }
+          }
+        }
+      }
+
       if (landed) {
         player.jumpsLeft = 1;
       }
@@ -1078,9 +1121,14 @@
           h: state.billManH
         };
         if (rectsOverlap(playerBox, bossBox)) {
+          if (state.invincibleTimer > 0) {
+            state.billManHp = 0;
+            state.billManActive = false;
+          } else {
           state.deathCause = "enemy";
           die();
           return;
+          }
         }
       }
       for (let i = obstacles.length - 1; i >= 0; i -= 1) {
@@ -1088,7 +1136,10 @@
         if (rectsOverlap(playerBox, obs)) {
           const playerFeet = player.y + player.h;
           const stompZone = obs.y + obs.h * 0.35;
-          if (player.vy > 0 && playerFeet <= stompZone) {
+          if (state.invincibleTimer > 0) {
+            obstacles.splice(i, 1);
+            state.score += 6;
+          } else if (player.vy > 0 && playerFeet <= stompZone) {
             obstacles.splice(i, 1);
             player.vy = -state.jumpPower * 0.45;
             state.score += 10;
@@ -1112,9 +1163,13 @@
         const dy = player.y + player.h * 0.5 - shot.y;
         if (Math.hypot(dx, dy) < player.w * 0.4 + shot.r) {
           enemyShots.splice(i, 1);
-          state.deathCause = "enemy";
-          die();
-          break;
+          if (state.invincibleTimer > 0) {
+            break;
+          } else {
+            state.deathCause = "enemy";
+            die();
+            break;
+          }
         }
         if (state.kidAlive && Math.hypot(kidBox.x + 14 - shot.x, kidBox.y + 24 - shot.y) < 20 + shot.r) {
           enemyShots.splice(i, 1);
@@ -1154,9 +1209,13 @@
         const dy = player.y + player.h * 0.5 - shot.y;
         if (Math.hypot(dx, dy) < player.w * 0.4 + shot.r) {
           billRockets.splice(i, 1);
-          state.deathCause = "enemy";
-          die();
-          break;
+          if (state.invincibleTimer > 0) {
+            break;
+          } else {
+            state.deathCause = "enemy";
+            die();
+            break;
+          }
         }
         if (state.kidAlive && Math.hypot(kidBox.x + 14 - shot.x, kidBox.y + 24 - shot.y) < 20 + shot.r) {
           billRockets.splice(i, 1);
@@ -1173,9 +1232,13 @@
         const dy = player.y + player.h * 0.5 - shot.y;
         if (Math.hypot(dx, dy) < player.w * 0.4 + shot.r) {
           billFireballs.splice(i, 1);
-          state.deathCause = "enemy";
-          die();
-          break;
+          if (state.invincibleTimer > 0) {
+            break;
+          } else {
+            state.deathCause = "enemy";
+            die();
+            break;
+          }
         }
         if (state.kidAlive && Math.hypot(kidBox.x + 14 - shot.x, kidBox.y + 24 - shot.y) < 20 + shot.r) {
           billFireballs.splice(i, 1);
@@ -1255,6 +1318,17 @@
           speakGreenThing();
         }
       }
+
+      for (let i = stars.length - 1; i >= 0; i -= 1) {
+        const star = stars[i];
+        const dx = player.x + player.w / 2 - star.x;
+        const dy = player.y + player.h / 2 - star.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < player.w * 0.6 + star.r) {
+          stars.splice(i, 1);
+          state.invincibleTimer = 5;
+        }
+      }
     }
 
     function drawBackground() {
@@ -1295,7 +1369,7 @@
     }
 
     function drawPlatform(plat) {
-      ctx.fillStyle = "#8b4b2b";
+      ctx.fillStyle = plat.isQuestion && !plat.used ? "#f2c94c" : "#8b4b2b";
       ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
 
       ctx.strokeStyle = "rgba(255, 214, 160, 0.35)";
@@ -1743,6 +1817,39 @@
       ctx.restore();
     }
 
+    function drawStar(star) {
+      const screenX = star.x - state.cameraX;
+      const y = star.y;
+      const spikes = 5;
+      const outer = star.r;
+      const inner = star.r * 0.5;
+      let rot = Math.PI / 2 * 3;
+      let x = screenX;
+      let yPos = y;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, yPos - outer);
+      for (let i = 0; i < spikes; i += 1) {
+        x = screenX + Math.cos(rot) * outer;
+        yPos = y + Math.sin(rot) * outer;
+        ctx.lineTo(x, yPos);
+        rot += Math.PI / spikes;
+
+        x = screenX + Math.cos(rot) * inner;
+        yPos = y + Math.sin(rot) * inner;
+        ctx.lineTo(x, yPos);
+        rot += Math.PI / spikes;
+      }
+      ctx.lineTo(screenX, y - outer);
+      ctx.closePath();
+      ctx.fillStyle = "#f2c94c";
+      ctx.shadowColor = "rgba(242, 201, 76, 0.6)";
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
     function draw() {
       drawBackground();
 
@@ -1824,6 +1931,10 @@
         drawPlant(plant);
       }
 
+      for (const star of stars) {
+        drawStar(star);
+      }
+
       drawTrapHouse();
       drawCourier();
       drawKid();
@@ -1897,6 +2008,9 @@
       }
       if (state.fireMessageTimer > 0) {
         state.fireMessageTimer -= dt;
+      }
+      if (state.invincibleTimer > 0) {
+        state.invincibleTimer -= dt;
       }
       if (state.beltTimer > 0) {
         state.beltTimer -= dt;
