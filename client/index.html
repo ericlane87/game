@@ -382,6 +382,10 @@
       billJumpTimer: 0,
       billJumpOffset: 0,
       beltTimer: 0,
+      kidX: 0,
+      kidY: 0,
+      kidHits: 0,
+      kidAlive: true,
       voiceEnabled: true,
       spokenStart: false
     };
@@ -443,6 +447,8 @@
       state.billFollowUpTimer = 0;
       state.billJumpTimer = 0;
       state.billJumpOffset = 0;
+      state.kidHits = 0;
+      state.kidAlive = true;
       state.spokenStart = false;
       obstacles.length = 0;
       platforms.length = 0;
@@ -569,6 +575,18 @@
       if (player.jumpsLeft > 0) {
         player.vy = -state.jumpPower;
         player.jumpsLeft -= 1;
+        if (state.kidAlive) {
+          const dir = player.facing || 1;
+          fireballs.push({
+            x: state.kidX + 10,
+            y: state.kidY + 22,
+            r: 6,
+            vx: dir * 420,
+            vy: 0,
+            life: 1.6,
+            type: "kid"
+          });
+        }
       }
     }
 
@@ -763,6 +781,11 @@
 
       if (player.x > state.distance) {
         state.distance = player.x;
+      }
+      state.kidX = player.x - 70;
+      state.kidY = world.groundY - 48;
+      if (state.kidX < state.cameraX + 20) {
+        state.kidX = state.cameraX + 20;
       }
       state.score = Math.floor(state.distance * 0.08);
       state.meter = Math.max(0, state.meter - state.meterDrain * dt);
@@ -962,6 +985,12 @@
       }
 
       const playerBox = { x: player.x, y: player.y, w: player.w, h: player.h };
+      const kidBox = {
+        x: state.kidX,
+        y: state.kidY,
+        w: 28,
+        h: 48
+      };
       if (state.billManActive && state.billManHp > 0) {
         const bossBox = {
           x: state.billManX - state.billManW * 0.5,
@@ -990,6 +1019,12 @@
             break;
           }
         }
+        if (state.kidAlive && rectsOverlap(kidBox, obs)) {
+          state.kidHits += 1;
+          if (state.kidHits >= 3) {
+            state.kidAlive = false;
+          }
+        }
       }
 
       for (let i = enemyShots.length - 1; i >= 0; i -= 1) {
@@ -1001,6 +1036,13 @@
           state.deathCause = "enemy";
           die();
           break;
+        }
+        if (state.kidAlive && Math.hypot(kidBox.x + 14 - shot.x, kidBox.y + 24 - shot.y) < 20 + shot.r) {
+          enemyShots.splice(i, 1);
+          state.kidHits += 1;
+          if (state.kidHits >= 3) {
+            state.kidAlive = false;
+          }
         }
       }
 
@@ -1037,6 +1079,13 @@
           die();
           break;
         }
+        if (state.kidAlive && Math.hypot(kidBox.x + 14 - shot.x, kidBox.y + 24 - shot.y) < 20 + shot.r) {
+          billRockets.splice(i, 1);
+          state.kidHits += 1;
+          if (state.kidHits >= 3) {
+            state.kidAlive = false;
+          }
+        }
       }
 
       for (let i = billFireballs.length - 1; i >= 0; i -= 1) {
@@ -1048,6 +1097,13 @@
           state.deathCause = "enemy";
           die();
           break;
+        }
+        if (state.kidAlive && Math.hypot(kidBox.x + 14 - shot.x, kidBox.y + 24 - shot.y) < 20 + shot.r) {
+          billFireballs.splice(i, 1);
+          state.kidHits += 1;
+          if (state.kidHits >= 3) {
+            state.kidAlive = false;
+          }
         }
       }
 
@@ -1448,6 +1504,41 @@
       ctx.restore();
     }
 
+    function drawKid() {
+      if (!state.kidAlive) return;
+      const screenX = state.kidX - state.cameraX;
+      const y = state.kidY;
+      const w = 28;
+      const h = 48;
+
+      ctx.save();
+      ctx.translate(screenX, y);
+
+      ctx.fillStyle = "#c68f62";
+      ctx.beginPath();
+      ctx.arc(w * 0.5, h * 0.2, w * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1f1a28";
+      ctx.fillRect(w * 0.22, h * 0.35, w * 0.56, h * 0.5);
+
+      ctx.strokeStyle = "#111018";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i += 1) {
+        const x = w * 0.28 + i * 4;
+        ctx.beginPath();
+        ctx.moveTo(x, h * 0.06);
+        ctx.lineTo(x, h * 0.18);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#0f0f14";
+      ctx.fillRect(w * 0.28, h * 0.82, w * 0.16, h * 0.14);
+      ctx.fillRect(w * 0.56, h * 0.82, w * 0.16, h * 0.14);
+
+      ctx.restore();
+    }
+
     function drawCigarettes(item) {
       const screenX = item.x - state.cameraX;
       ctx.save();
@@ -1588,6 +1679,7 @@
 
       drawTrapHouse();
       drawCourier();
+      drawKid();
 
       if (state.collectMessageTimer > 0) {
         ctx.save();
