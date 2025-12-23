@@ -1961,6 +1961,27 @@
         ctx.restore();
       }
 
+      if (state.invincibleTimer > 0) {
+        const screenX = player.x - state.cameraX;
+        ctx.save();
+        ctx.strokeStyle = "#ff5a4f";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(screenX + player.w * 0.5, player.y - 10, 14, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(screenX + player.w * 0.5 - 8, player.y - 22);
+        ctx.lineTo(screenX + player.w * 0.5 - 2, player.y - 32);
+        ctx.lineTo(screenX + player.w * 0.5 + 2, player.y - 22);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(screenX + player.w * 0.5 + 8, player.y - 22);
+        ctx.lineTo(screenX + player.w * 0.5 + 2, player.y - 32);
+        ctx.lineTo(screenX + player.w * 0.5 - 2, player.y - 22);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       if (state.beltTimer > 0) {
         const screenX = player.x - state.cameraX;
         const dir = player.facing || 1;
