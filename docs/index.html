@@ -428,9 +428,9 @@
       lastPlant: 0,
       invincibleTimer: 0,
       copCarActive: false,
-      copCarX: 0,
-      copCarY: 0,
+      copCars: [],
       copCarTimer: 0,
+      copCarSpawnTimer: 0,
       dogsActive: false,
       dogsX: 0,
       dogs: [],
@@ -514,9 +514,9 @@
       state.kidBurstCount = 0;
       state.invincibleTimer = 0;
       state.copCarActive = false;
-      state.copCarX = 0;
-      state.copCarY = 0;
+      state.copCars = [];
       state.copCarTimer = 0;
+      state.copCarSpawnTimer = 0;
       state.dogsActive = false;
       state.dogsX = 0;
       state.dogs = [];
@@ -571,16 +571,16 @@
       restartBtn.textContent = "New Game";
       state.initialDropTimer = 3;
       state.copCarTimer = 5;
+      state.copCarSpawnTimer = 0;
       state.levelEndX = levelConfig ? levelConfig.endX : 15600;
       state.goalLabel = levelConfig ? levelConfig.label : "TRAP HOUSE";
       if (state.level === 1) {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = state.levelEndX - 240;
-        state.billManStage = 1;
-        state.billManActive = true;
-        state.billManX = player.x + world.width * 0.9;
+        state.billManStage = 0;
+        state.billManActive = false;
+        state.billManX = state.billManMidX;
         state.billManY = world.groundY - 84;
-        state.billRocketTimer = state.time;
       } else {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = 0;
@@ -814,7 +814,8 @@
         state.cameraX + world.width + 180,
         state.lastObstacleX + 280 + Math.random() * 240
       );
-      const onPlatform = platforms.length && Math.random() < 0.6;
+      const onPlatformChance = state.level === 1 ? 0.35 : 0.55;
+      const onPlatform = platforms.length && Math.random() < onPlatformChance;
       let y = world.groundY - size;
       if (isHeli || isBird) {
         y = world.groundY - 220 - Math.random() * 140;
@@ -854,7 +855,8 @@
         state.cameraX + world.width + 160,
         state.lastCollectibleX + 280 + Math.random() * 240
       );
-      const onPlatform = platforms.length && Math.random() < 0.6;
+      const onPlatformChance = state.level === 1 ? 0.5 : 0.7;
+      const onPlatform = platforms.length && Math.random() < onPlatformChance;
       let y = world.groundY - 50 - Math.random() * 40;
       if (onPlatform) {
         const plat = platforms[Math.floor(Math.random() * platforms.length)];
@@ -901,7 +903,7 @@
     }
 
     function seedPlatformsForLevel(level) {
-      const count = level === 3 ? 9 : 7;
+      const count = level === 3 ? 10 : 8;
       for (let i = 0; i < count; i += 1) {
         spawnPlatform();
       }
@@ -1015,13 +1017,17 @@
         state.copCarTimer -= dt;
         if (state.copCarTimer <= 0) {
           state.copCarActive = true;
-          state.copCarX = state.cameraX + 40;
-          state.copCarY = world.groundY - 36;
+          state.copCars.push({
+            x: state.cameraX + 40,
+            y: world.groundY - 36
+          });
+          state.copCarSpawnTimer = 5;
         }
       }
 
       if (state.copCarActive && player.x >= state.levelEndX * 0.5) {
         state.copCarActive = false;
+        state.copCars.length = 0;
         state.dogsActive = true;
         state.dogsX = state.cameraX + 40;
         state.dogs = Array.from({ length: 5 }, (_, i) => ({
@@ -1039,12 +1045,27 @@
       }
 
       if (state.copCarActive) {
-        const targetX = player.x - 120;
-        const step = 210 * dt;
-        if (targetX > state.copCarX) {
-          state.copCarX = Math.min(targetX, state.copCarX + step);
-        } else {
-          state.copCarX += step;
+        if (state.copCarSpawnTimer > 0) {
+          state.copCarSpawnTimer -= dt;
+          if (state.copCarSpawnTimer <= 0) {
+            state.copCars.push({
+              x: state.cameraX + 40,
+              y: world.groundY - 36
+            });
+            state.copCarSpawnTimer = 5;
+          }
+        }
+        const step = 189 * dt;
+        const playerAirborne = player.y + player.h < world.groundY - 2;
+        for (let i = 0; i < state.copCars.length; i += 1) {
+          const car = state.copCars[i];
+          const targetX = player.x - 120 - i * 70;
+          if (!playerAirborne && targetX > car.x) {
+            car.x = Math.min(targetX, car.x + step);
+          }
+          if (car.x > targetX) {
+            car.x = targetX;
+          }
         }
       }
 
@@ -1112,7 +1133,7 @@
         state.lastPlant = state.time;
       }
 
-      if (state.level === 1 && state.billManStage === 2 && !state.billManActive && player.x >= state.billManEndX - 200) {
+      if (state.level === 1 && state.billManStage === 2 && !state.billManActive) {
         state.billManActive = true;
         state.billManStage = 3;
         state.billManHp = 20;
@@ -1121,40 +1142,47 @@
       }
 
       if (state.billManActive) {
-        const targetDir = player.x > state.billManX ? 1 : -1;
-        state.billManX += targetDir * state.billMoveSpeed * dt;
-        state.billManY = world.groundY - state.billManH - state.billJumpOffset;
+        const shouldWait = state.level === 1
+          && state.billManStage === 3
+          && player.x < state.billManEndX - world.width * 0.6;
+        if (shouldWait) {
+          state.billManX = state.billManEndX;
+        } else {
+          const targetDir = player.x > state.billManX ? 1 : -1;
+          state.billManX += targetDir * state.billMoveSpeed * dt;
+          state.billManY = world.groundY - state.billManH - state.billJumpOffset;
 
-        if (state.time - state.billRocketTimer >= state.billFireRate) {
-          const targetY = player.y + player.h * 0.5;
-          billRockets.push({
-            x: state.billManX,
-            y: targetY,
-            r: 10,
-            vx: player.x > state.billManX ? 260 : -260,
-            life: 4
-          });
-          state.billRocketTimer = state.time;
-          state.billFollowUpTimer = state.time + state.billFollowUp;
-        }
-        if (state.billFollowUpTimer > 0 && state.time >= state.billFollowUpTimer) {
-          const targetY = player.y + player.h * 0.5;
-          billFireballs.push({
-            x: state.billManX,
-            y: targetY,
-            r: 7,
-            vx: player.x > state.billManX ? 320 : -320,
-            life: 3
-          });
-          state.billFollowUpTimer = 0;
-        }
+          if (state.time - state.billRocketTimer >= state.billFireRate) {
+            const targetY = player.y + player.h * 0.5;
+            billRockets.push({
+              x: state.billManX,
+              y: targetY,
+              r: 10,
+              vx: player.x > state.billManX ? 260 : -260,
+              life: 4
+            });
+            state.billRocketTimer = state.time;
+            state.billFollowUpTimer = state.time + state.billFollowUp;
+          }
+          if (state.billFollowUpTimer > 0 && state.time >= state.billFollowUpTimer) {
+            const targetY = player.y + player.h * 0.5;
+            billFireballs.push({
+              x: state.billManX,
+              y: targetY,
+              r: 7,
+              vx: player.x > state.billManX ? 320 : -320,
+              life: 3
+            });
+            state.billFollowUpTimer = 0;
+          }
 
-        if (state.time - state.billJumpTimer >= state.billJumpRate) {
-          state.billJumpTimer = state.time;
-          state.billJumpOffset = 32;
-        }
-        if (state.billJumpOffset > 0) {
-          state.billJumpOffset = Math.max(0, state.billJumpOffset - 120 * dt);
+          if (state.time - state.billJumpTimer >= state.billJumpRate) {
+            state.billJumpTimer = state.time;
+            state.billJumpOffset = 32;
+          }
+          if (state.billJumpOffset > 0) {
+            state.billJumpOffset = Math.max(0, state.billJumpOffset - 120 * dt);
+          }
         }
       }
 
@@ -1326,16 +1354,18 @@
         }
       }
       if (state.copCarActive) {
-        const carBox = {
-          x: state.copCarX,
-          y: state.copCarY,
-          w: 90,
-          h: 30
-        };
-        if (rectsOverlap(playerBox, carBox)) {
-          state.deathCause = "enemy";
-          die();
-          return;
+        for (const car of state.copCars) {
+          const carBox = {
+            x: car.x,
+            y: car.y,
+            w: 90,
+            h: 30
+          };
+          if (rectsOverlap(playerBox, carBox)) {
+            state.deathCause = "enemy";
+            die();
+            return;
+          }
         }
       }
 
@@ -1989,26 +2019,29 @@
 
     function drawCopCar() {
       if (!state.copCarActive) return;
-      const screenX = state.copCarX - state.cameraX;
-      const y = state.copCarY;
       ctx.save();
-      ctx.translate(screenX, y);
+      for (const car of state.copCars) {
+        const screenX = car.x - state.cameraX;
+        const y = car.y;
+        ctx.translate(screenX, y);
 
-      ctx.fillStyle = "#1f2a44";
-      ctx.fillRect(0, 8, 90, 22);
-      ctx.fillStyle = "#2c3a5a";
-      ctx.fillRect(10, 0, 40, 16);
-      ctx.fillStyle = "#ff5a4f";
-      ctx.fillRect(52, 2, 12, 6);
-      ctx.fillStyle = "#4ad9d9";
-      ctx.fillRect(66, 2, 12, 6);
+        ctx.fillStyle = "#1f2a44";
+        ctx.fillRect(0, 8, 90, 22);
+        ctx.fillStyle = "#2c3a5a";
+        ctx.fillRect(10, 0, 40, 16);
+        ctx.fillStyle = "#ff5a4f";
+        ctx.fillRect(52, 2, 12, 6);
+        ctx.fillStyle = "#4ad9d9";
+        ctx.fillRect(66, 2, 12, 6);
 
-      ctx.fillStyle = "#0f0f14";
-      ctx.beginPath();
-      ctx.arc(18, 30, 8, 0, Math.PI * 2);
-      ctx.arc(72, 30, 8, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.fillStyle = "#0f0f14";
+        ctx.beginPath();
+        ctx.arc(18, 30, 8, 0, Math.PI * 2);
+        ctx.arc(72, 30, 8, 0, Math.PI * 2);
+        ctx.fill();
 
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
       ctx.restore();
     }
 
