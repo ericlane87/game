@@ -1181,7 +1181,7 @@
       y = Math.max(minY, Math.min(maxY, y));
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
-        state.lastPlatformX + 200 + Math.random() * 160
+        state.lastPlatformX + 240 + Math.random() * 220
       );
       const plat = createPlatform(spawnX, y, w, h);
       platforms.push(plat);
@@ -1206,6 +1206,16 @@
         state.lastPlatformX = Math.max(state.lastPlatformX, x + w);
       }
       state.lastPlatformY = y;
+    }
+
+    function spawnStairChoice(atX) {
+      const yLow = world.groundY - 120;
+      for (let i = 0; i < 4; i += 1) {
+        const plat = createPlatform(atX + i * 60, yLow - i * 40, 60, 14);
+        platforms.push(plat);
+        state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
+        state.lastPlatformY = plat.y;
+      }
     }
 
     function seedPlatformsForLevel(level) {
@@ -1501,12 +1511,17 @@
         return;
       }
 
-      if (platforms.length < 14 && state.time - state.lastPlatform > 0.5) {
+      const nearEnd = player.x > state.levelEndX * 0.85;
+      if (!nearEnd && platforms.length < 14 && state.time - state.lastPlatform > 0.7) {
         spawnPlatform();
         state.lastPlatform = state.time;
       }
-      if (state.time - state.lastPlatform > 1.4 && Math.random() < 0.4) {
+      if (!nearEnd && state.time - state.lastPlatform > 1.6 && Math.random() < 0.35) {
         spawnLowPlatformChain();
+        state.lastPlatform = state.time;
+      }
+      if (state.level === 1 && !nearEnd && state.time - state.lastPlatform > 2.4 && Math.random() < 0.4) {
+        spawnStairChoice(state.cameraX + world.width + 220);
         state.lastPlatform = state.time;
       }
 
