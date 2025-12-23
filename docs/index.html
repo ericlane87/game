@@ -467,7 +467,7 @@
     };
 
     const levelConfigs = [
-      { label: "TRAP HOUSE", endX: 15600 },
+      { label: "TRAP HOUSE", endX: 7800 },
       { label: "ROACH MOTEL", endX: 18000 },
       { label: "WIC OFFICE", endX: 19600 },
       { label: "BODEGA", endX: 21000, boss: { name: "REPO CHIEF", hp: 18, fireRate: 3.2, followUp: 1.1, speed: 90, jumpRate: 4.5, shirt: "#3a2f4b", sign: "#f6f1e8" } },
@@ -531,6 +531,7 @@
       billFollowUp: 1,
       billJumpRate: 4.5,
       levelOneAirTimer: 0,
+      levelOneAirBurstTimer: 0,
       beltTimer: 0,
       kidX: 0,
       kidY: 0,
@@ -705,6 +706,7 @@
       state.levelOneBillTriggerX = 0;
       state.levelOneBillTriggerX2 = 0;
       state.levelOneAirTimer = 0;
+      state.levelOneAirBurstTimer = 0;
       } else {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = 0;
@@ -713,6 +715,7 @@
       state.levelOneBillTriggerX = 0;
       state.levelOneBillTriggerX2 = 0;
       state.levelOneAirTimer = 0;
+      state.levelOneAirBurstTimer = 0;
       }
       if (state.level === 2) {
         state.copBossActive = true;
@@ -812,6 +815,27 @@
         star3.tint = "#2faa59";
         platforms.push(star3);
         addAccessSteps(star3);
+
+        const extraPlatforms = [
+          createPlatform(player.x + 2100, world.groundY - 160, 140, 14),
+          createPlatform(player.x + 2380, world.groundY - 220, 160, 14),
+          createPlatform(player.x + 2680, world.groundY - 180, 140, 14)
+        ];
+        for (const plat of extraPlatforms) {
+          platforms.push(plat);
+          addAccessSteps(plat);
+          obstacles.push({
+            x: plat.x + plat.w - 36,
+            y: plat.y - 30,
+            w: 34,
+            h: 30,
+            type: "roach",
+            speed: 70,
+            vx: -1,
+            phase: Math.random() * Math.PI * 2,
+            hp: 1
+          });
+        }
       }
       seedStartPlant();
       if (state.level !== 1) {
@@ -1016,7 +1040,6 @@
     }
 
     function spawnObstacle() {
-      if (state.level === 1) return;
       const roll = Math.random();
       const isHousing = state.level >= 2 ? roll < 0.3 : roll < 0.2;
       const isHeli = state.level === 2 && !isHousing && roll < 0.55;
@@ -1027,16 +1050,18 @@
         state.cameraX + world.width + 180,
         state.lastObstacleX + 280 + Math.random() * 240
       );
-      const onPlatformChance = state.level === 1 ? 0.35 : 0.55;
+      const onPlatformChance = state.level === 1 ? 0.6 : 0.55;
       const onPlatform = platforms.length && Math.random() < onPlatformChance;
       let y = world.groundY - size;
+      let patrolPlat = null;
       if (isHeli || isBird) {
         y = world.groundY - 220 - Math.random() * 140;
       } else if (onPlatform) {
         const plat = platforms[Math.floor(Math.random() * platforms.length)];
         y = plat.y - size;
+        patrolPlat = plat;
       }
-      obstacles.push({
+      const obstacle = {
         x: spawnX,
         y,
         w: width,
@@ -1046,7 +1071,14 @@
         vx: -1,
         phase: Math.random() * Math.PI * 2,
         hp: isHeli ? 2 + Math.floor(Math.random() * 2) : 1
-      });
+      };
+      if (!isHeli && !isBird && !isHousing && onPlatform && patrolPlat) {
+        obstacle.patrolMinX = patrolPlat.x;
+        obstacle.patrolMaxX = Math.max(patrolPlat.x, patrolPlat.x + patrolPlat.w - width);
+        obstacle.patrolDir = Math.random() < 0.5 ? -1 : 1;
+        obstacle.speed = 60 + Math.random() * 30;
+      }
+      obstacles.push(obstacle);
       state.lastObstacleX = spawnX;
     }
 
@@ -1177,7 +1209,6 @@
     }
 
     function seedPlatformsForLevel(level) {
-      if (level === 1) return;
       const count = level === 3 ? 10 : 8;
       for (let i = 0; i < count; i += 1) {
         spawnPlatform();
@@ -1375,6 +1406,25 @@
         }
       }
 
+      if (state.level === 1 && state.time - state.levelOneAirBurstTimer >= 10) {
+        const spawnX = state.cameraX + world.width + 140;
+        obstacles.push({
+          x: spawnX,
+          y: world.groundY - 260 - Math.random() * 120,
+          w: 34,
+          h: 28,
+          type: "airboss",
+          speed: 80,
+          vx: -1,
+          phase: Math.random() * Math.PI * 2,
+          hp: 1,
+          burstTimer: state.time + 1.2 + Math.random() * 0.6,
+          burstCount: 0
+        });
+        state.lastObstacleX = spawnX;
+        state.levelOneAirBurstTimer = state.time;
+      }
+
       if (state.level === 1 && state.billManStage === 0 && player.x >= state.levelOneBillTriggerX) {
         state.billManActive = true;
         state.billManStage = 1;
@@ -1451,16 +1501,32 @@
         return;
       }
 
-      if (state.level !== 1 && platforms.length < 14 && state.time - state.lastPlatform > 0.5) {
+      if (platforms.length < 14 && state.time - state.lastPlatform > 0.5) {
         spawnPlatform();
         state.lastPlatform = state.time;
       }
-      if (state.level !== 1 && state.time - state.lastPlatform > 1.4 && Math.random() < 0.4) {
+      if (state.time - state.lastPlatform > 1.4 && Math.random() < 0.4) {
         spawnLowPlatformChain();
         state.lastPlatform = state.time;
       }
 
-      if (state.time - state.lastSpawn > 0.7 + Math.random() * 0.9) {
+      if (state.level === 1 && state.time - state.lastSpawn > 1.0 + Math.random() * 0.6) {
+        obstacles.push({
+          x: state.cameraX + world.width + 160,
+          y: world.groundY - 30,
+          w: 34,
+          h: 30,
+          type: "roach",
+          speed: 80 + Math.random() * 20,
+          vx: -1,
+          phase: Math.random() * Math.PI * 2,
+          hp: 1
+        });
+        if (Math.random() < 0.5) {
+          spawnObstacle();
+        }
+        state.lastSpawn = state.time;
+      } else if (state.level !== 1 && state.time - state.lastSpawn > 0.7 + Math.random() * 0.9) {
         spawnObstacle();
         state.lastSpawn = state.time;
       }
@@ -1579,8 +1645,34 @@
       }
 
       obstacles.forEach((obs) => {
-        const dir = obs.x > player.x ? -1 : 1;
-        obs.x += dir * obs.speed * dt;
+        if (typeof obs.patrolMinX === "number") {
+          obs.x += obs.patrolDir * obs.speed * dt;
+          if (obs.x <= obs.patrolMinX) {
+            obs.x = obs.patrolMinX;
+            obs.patrolDir = 1;
+          } else if (obs.x >= obs.patrolMaxX) {
+            obs.x = obs.patrolMaxX;
+            obs.patrolDir = -1;
+          }
+        } else {
+          const dir = obs.x > player.x ? -1 : 1;
+          obs.x += dir * obs.speed * dt;
+        }
+        if (obs.type === "airboss") {
+          obs.y += Math.sin(state.time * 1.6 + obs.phase) * 20 * dt;
+          if (state.time >= obs.burstTimer && obs.burstCount < 2) {
+            enemyShots.push({
+              x: obs.x,
+              y: obs.y + 18,
+              r: 6,
+              vx: 0,
+              vy: 240,
+              life: 3
+            });
+            obs.burstCount += 1;
+            obs.burstTimer = state.time + 1;
+          }
+        }
       });
 
       fireballs.forEach((fireball) => {
