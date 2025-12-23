@@ -386,11 +386,14 @@
       burstCharges: 0,
       enemyShotTimer: 0,
       billManActive: false,
+      billManStage: 0,
       billManX: 0,
       billManY: 0,
       billManHp: 10,
       billManW: 56,
       billManH: 90,
+      billManMidX: 0,
+      billManEndX: 0,
       billRocketTimer: 0,
       billFollowUpTimer: 0,
       billJumpTimer: 0,
@@ -462,6 +465,7 @@
       state.burstCharges = 0;
       state.enemyShotTimer = 0;
       state.billManActive = false;
+      state.billManStage = 0;
       state.billManX = 0;
       state.billManY = 0;
       state.billManHp = 10;
@@ -510,11 +514,15 @@
         state.goalLabel = "BIRD NEST";
       }
       if (state.level === 1) {
-        state.billManX = state.levelEndX * 0.5 + world.width * 0.6;
+        state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
+        state.billManEndX = state.levelEndX - 240;
+        state.billManX = state.billManMidX;
         state.billManY = world.groundY - 84;
       }
       if (state.level === 2) {
-        state.billManX = state.levelEndX * 0.5 + world.width * 0.6;
+        state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
+        state.billManEndX = 0;
+        state.billManX = state.billManMidX;
         state.billManY = world.groundY - 84;
       }
       seedPlatformsForLevel(state.level);
@@ -524,9 +532,11 @@
         w: 90,
         h: 14,
         isQuestion: true,
-        used: false
+        used: false,
+        hasStar: false
       });
       seedStartPlant();
+      spawnStarPack();
       for (let i = 0; i < 3; i += 1) {
         spawnObstacle();
       }
@@ -723,6 +733,11 @@
           state.billManHp = Math.max(0, state.billManHp - 2);
           if (state.billManHp <= 0) {
             state.billManActive = false;
+            if (state.billManStage === 1) {
+              state.billManStage = 2;
+            } else if (state.billManStage === 3) {
+              state.billManStage = 4;
+            }
           }
         }
       }
@@ -768,7 +783,8 @@
         w,
         h,
         isQuestion: Math.random() < 0.18,
-        used: false
+        used: false,
+        hasStar: false
       };
     }
 
@@ -860,6 +876,24 @@
       state.lastCollectibleX = spawnX;
     }
 
+    function spawnStarPack() {
+      const baseX = player.x + 520;
+      const yOptions = [
+        world.groundY - 140,
+        world.groundY - 220,
+        world.groundY - 300
+      ];
+      for (let i = 0; i < 3; i += 1) {
+        const y = yOptions[i % yOptions.length];
+        const plat = createPlatform(baseX + i * 320, y, 110, 14);
+        plat.isQuestion = true;
+        plat.used = false;
+        plat.hasStar = true;
+        platforms.push(plat);
+        state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
+      }
+    }
+
     function rectsOverlap(a, b) {
       return (
         a.x < b.x + b.w &&
@@ -919,6 +953,14 @@
         }
       }
 
+      if (state.level <= 2 && state.billManStage === 0 && player.x >= state.billManMidX - world.width * 0.9) {
+        state.billManActive = true;
+        state.billManStage = 1;
+        state.billManHp = 10;
+        state.billManX = state.billManMidX;
+        state.billRocketTimer = state.time;
+      }
+
       if (state.copCarActive) {
         const targetX = player.x - 140;
         state.copCarX += (targetX - state.copCarX) * 0.35 * dt;
@@ -953,8 +995,11 @@
         state.lastPlant = state.time;
       }
 
-      if (state.level <= 2 && !state.billManActive && player.x >= state.billManX - world.width * 0.9) {
+      if (state.level === 1 && state.billManStage === 2 && !state.billManActive && player.x >= state.billManEndX - 200) {
         state.billManActive = true;
+        state.billManStage = 3;
+        state.billManHp = 10;
+        state.billManX = state.billManEndX;
         state.billRocketTimer = state.time;
       }
 
@@ -1133,11 +1178,13 @@
             player.vy = 0;
             if (plat.isQuestion && !plat.used) {
               plat.used = true;
-              stars.push({
-                x: plat.x + plat.w * 0.5,
-                y: plat.y - 24,
-                r: 12
-              });
+              if (plat.hasStar) {
+                stars.push({
+                  x: plat.x + plat.w * 0.5,
+                  y: plat.y - 24,
+                  r: 12
+                });
+              }
             }
           }
         }
@@ -1178,6 +1225,11 @@
           if (state.invincibleTimer > 0) {
             state.billManHp = 0;
             state.billManActive = false;
+            if (state.billManStage === 1) {
+              state.billManStage = 2;
+            } else if (state.billManStage === 3) {
+              state.billManStage = 4;
+            }
           } else {
           state.deathCause = "enemy";
           die();
@@ -1340,6 +1392,11 @@
             state.billManHp -= 1;
             if (state.billManHp <= 0) {
               state.billManActive = false;
+              if (state.billManStage === 1) {
+                state.billManStage = 2;
+              } else if (state.billManStage === 3) {
+                state.billManStage = 4;
+              }
               break;
             }
           }
@@ -1423,7 +1480,11 @@
     }
 
     function drawPlatform(plat) {
-      ctx.fillStyle = plat.isQuestion && !plat.used ? "#f2c94c" : "#8b4b2b";
+      ctx.fillStyle = plat.isQuestion && plat.hasStar && !plat.used
+        ? "#ffd166"
+        : plat.isQuestion && !plat.used
+          ? "#f2c94c"
+          : "#8b4b2b";
       ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
 
       ctx.strokeStyle = "rgba(255, 214, 160, 0.35)";
