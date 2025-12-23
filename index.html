@@ -1899,15 +1899,23 @@
 
       drawBillMan();
 
-      ctx.fillStyle = "#ffb200";
       for (const fireball of fireballs) {
         const screenX = fireball.x - state.cameraX;
+        const w = fireball.r * 2.4;
+        const h = fireball.r * 1.4;
+        ctx.save();
+        ctx.translate(screenX, fireball.y);
+        ctx.rotate(Math.atan2(fireball.vy || 0, fireball.vx || 1));
+        ctx.fillStyle = "#f2efe6";
+        ctx.strokeStyle = "rgba(15, 15, 20, 0.6)";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.shadowColor = "rgba(255, 178, 0, 0.7)";
-        ctx.shadowBlur = 10;
-        ctx.arc(screenX, fireball.y, fireball.r, 0, Math.PI * 2);
+        ctx.roundRect(-w / 2, -h / 2, w, h, 4);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.stroke();
+        ctx.fillStyle = "#ff5a4f";
+        ctx.fillRect(-w / 2 + 3, -h / 2 + 3, w * 0.35, h * 0.25);
+        ctx.restore();
       }
 
       ctx.fillStyle = "#ff5a4f";
