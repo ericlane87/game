@@ -389,7 +389,7 @@
       billManStage: 0,
       billManX: 0,
       billManY: 0,
-      billManHp: 10,
+      billManHp: 20,
       billManW: 56,
       billManH: 90,
       billManMidX: 0,
@@ -474,7 +474,7 @@
       state.billManStage = 0;
       state.billManX = 0;
       state.billManY = 0;
-      state.billManHp = 10;
+      state.billManHp = 20;
       state.billRocketTimer = 0;
       state.billFollowUpTimer = 0;
       state.billJumpTimer = 0;
@@ -975,14 +975,13 @@
       if (state.level <= 2 && state.billManStage === 0 && player.x >= state.billManMidX - world.width * 0.9) {
         state.billManActive = true;
         state.billManStage = 1;
-        state.billManHp = 10;
+        state.billManHp = 20;
         state.billManX = state.billManMidX;
         state.billRocketTimer = state.time;
       }
 
       if (state.copCarActive) {
-        const targetX = player.x - 140;
-        state.copCarX += (targetX - state.copCarX) * 0.7 * dt;
+        state.copCarX += 140 * dt;
       }
 
       if (state.level === 2 && state.copBossActive && state.copBossHp > 0) {
@@ -1030,7 +1029,7 @@
       if (state.level === 1 && state.billManStage === 2 && !state.billManActive && player.x >= state.billManEndX - 200) {
         state.billManActive = true;
         state.billManStage = 3;
-        state.billManHp = 10;
+        state.billManHp = 20;
         state.billManX = state.billManEndX;
         state.billRocketTimer = state.time;
       }
