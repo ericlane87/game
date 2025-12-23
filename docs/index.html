@@ -131,6 +131,16 @@
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     }
 
+    #burst-counter {
+      pointer-events: none;
+      background: rgba(18, 16, 24, 0.75);
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+    }
+
     #overlay {
       position: absolute;
       inset: 0;
@@ -262,6 +272,7 @@
         <div id="meter-text">100</div>
       </div>
       <div class="score">Addiction: <span id="meter-value">100%</span></div>
+      <div id="burst-counter">Burst: <span id="burst-count">0</span></div>
       <button id="voice-toggle" type="button" aria-label="Toggle voice">Voice On</button>
     </div>
 
@@ -270,7 +281,7 @@
         <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
         <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
         <div id="death-reason"></div>
-        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, right click for belt. Mobile: drag to move, tap to jump, Fire/Belt buttons.</div>
+        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, G for burst, right click for belt. Mobile: drag to move, tap to jump, Fire/Belt buttons.</div>
         <button id="restart-btn" type="button">New Game</button>
       </div>
     </div>
@@ -290,6 +301,7 @@
     const meterFill = document.getElementById("meter-fill");
     const meterText = document.getElementById("meter-text");
     const meterValueLabel = document.getElementById("meter-value");
+    const burstCount = document.getElementById("burst-count");
     const overlay = document.getElementById("overlay");
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
@@ -369,7 +381,7 @@
       level: 1,
       levelEndX: 7800,
       goalLabel: "TRAP HOUSE",
-      flameShots: 0,
+      burstCharges: 0,
       enemyShotTimer: 0,
       billManActive: false,
       billManX: 0,
@@ -441,7 +453,7 @@
       state.distance = 0;
       state.cameraX = 0;
       state.deathCause = "";
-      state.flameShots = 0;
+      state.burstCharges = 0;
       state.enemyShotTimer = 0;
       state.billManActive = false;
       state.billManX = 0;
@@ -636,35 +648,37 @@
     function shootFireball() {
       if (state.dead || !state.running) return;
       const dir = player.facing || 1;
-      if (state.flameShots > 0) {
-        const baseX = player.x + player.w * 0.6;
-        const baseY = player.y + player.h * 0.4;
-        const angles = [-Math.PI / 2, -Math.PI / 6, -Math.PI / 3, Math.PI / 6, Math.PI / 3, Math.PI / 2];
-        const speed = 380;
-        angles.forEach((angle) => {
-          fireballs.push({
-            x: baseX,
-            y: baseY,
-            r: 9,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: 1.4,
-            type: "burst"
-          });
-        });
-        state.flameShots = 0;
-      } else {
-        fireballs.push({
-          x: player.x + player.w * 0.6,
-          y: player.y + player.h * 0.4,
-          r: 8,
-          vx: dir * 520,
-          vy: 0,
-          life: 2.2,
-          type: "fireball"
-        });
-      }
+      fireballs.push({
+        x: player.x + player.w * 0.6,
+        y: player.y + player.h * 0.4,
+        r: 8,
+        vx: dir * 520,
+        vy: 0,
+        life: 2.2,
+        type: "fireball"
+      });
       state.fireMessageTimer = 0.6;
+    }
+
+    function releaseBurst() {
+      if (state.dead || !state.running) return;
+      if (state.burstCharges <= 0) return;
+      const baseX = player.x + player.w * 0.6;
+      const baseY = player.y + player.h * 0.4;
+      const angles = [-Math.PI / 2, -Math.PI / 6, -Math.PI / 3, Math.PI / 6, Math.PI / 3, Math.PI / 2];
+      const speed = 380;
+      angles.forEach((angle) => {
+        fireballs.push({
+          x: baseX,
+          y: baseY,
+          r: 9,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1.4,
+          type: "burst"
+        });
+      });
+      state.burstCharges = Math.max(0, state.burstCharges - 1);
     }
 
     function swingBelt() {
@@ -1314,7 +1328,7 @@
         if (dist < player.w * 0.6 + plant.r) {
           plants.splice(i, 1);
           state.meter = 100;
-          state.flameShots = 1;
+          state.burstCharges = Math.min(3, state.burstCharges + 1);
           speakGreenThing();
         }
       }
@@ -2023,6 +2037,9 @@
       if (meterValueLabel) {
         meterValueLabel.textContent = `${Math.round(meterValue)}%`;
       }
+      if (burstCount) {
+        burstCount.textContent = `${state.burstCharges}`;
+      }
 
       if (state.collectMessageTimer > 0) {
         state.collectMessageTimer -= dt;
@@ -2056,6 +2073,9 @@
       }
       if (event.code === "KeyF") {
         queueFire();
+      }
+      if (event.code === "KeyG") {
+        releaseBurst();
       }
       if (event.code === "ArrowLeft" || event.code === "KeyA") {
         input.left = true;
