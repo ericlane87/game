@@ -1347,7 +1347,7 @@
       if (state.level === 1 && state.billManStage === 0 && player.x >= state.levelOneBillTriggerX) {
         state.billManActive = true;
         state.billManStage = 1;
-        state.billManHp = 20;
+        state.billManHp = 3;
         state.billManX = player.x + world.width * 0.6;
         state.billRocketTimer = state.time;
         state.levelOneBillTriggerX = Number.POSITIVE_INFINITY;
