@@ -418,6 +418,7 @@
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
     const burstBtn = document.getElementById("burst-btn");
+    const dpad = document.getElementById("dpad");
     const dpadUp = document.getElementById("dpad-up");
     const dpadLeft = document.getElementById("dpad-left");
     const dpadRight = document.getElementById("dpad-right");
@@ -440,7 +441,8 @@
       fireQueued: false,
       beltQueued: false,
       left: false,
-      right: false
+      right: false,
+      down: false
     };
 
     const world = {
@@ -459,7 +461,9 @@
       vx: 0,
       facing: 1,
       jumpsLeft: 1,
-      color: "#f6f1e8"
+      color: "#f6f1e8",
+      standH: 52,
+      ducking: false
     };
 
     const levelConfigs = [
@@ -517,6 +521,7 @@
       billManMidX: 0,
       billManEndX: 0,
       levelOneBillTriggerX: 0,
+      levelOneBillTriggerX2: 0,
       billRocketTimer: 0,
       billFollowUpTimer: 0,
       billJumpTimer: 0,
@@ -525,6 +530,7 @@
       billFireRate: 3,
       billFollowUp: 1,
       billJumpRate: 4.5,
+      levelOneAirTimer: 0,
       beltTimer: 0,
       kidX: 0,
       kidY: 0,
@@ -678,10 +684,12 @@
       player.vy = 0;
       player.vx = 0;
       player.jumpsLeft = 1;
+      player.standH = player.h;
+      player.ducking = false;
       overlay.classList.add("hidden");
       restartBtn.textContent = "New Game";
       state.initialDropTimer = state.level === 1 ? 0 : 3;
-      state.copCarTimer = 5;
+      state.copCarTimer = state.level === 1 ? 0 : 5;
       state.copCarSpawnTimer = 0;
       state.copHitCooldown = 0;
       state.lastPlatformY = world.groundY - 160;
@@ -690,17 +698,21 @@
       if (state.level === 1) {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = state.levelEndX - 240;
-        state.billManStage = 0;
-        state.billManActive = false;
-        state.billManX = state.billManMidX;
-        state.billManY = world.groundY - 84;
-        state.levelOneBillTriggerX = 0;
+      state.billManStage = 0;
+      state.billManActive = false;
+      state.billManX = state.billManMidX;
+      state.billManY = world.groundY - 84;
+      state.levelOneBillTriggerX = 0;
+      state.levelOneBillTriggerX2 = 0;
+      state.levelOneAirTimer = 0;
       } else {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = 0;
-        state.billManX = state.billManMidX;
-        state.billManY = world.groundY - 84;
-        state.levelOneBillTriggerX = 0;
+      state.billManX = state.billManMidX;
+      state.billManY = world.groundY - 84;
+      state.levelOneBillTriggerX = 0;
+      state.levelOneBillTriggerX2 = 0;
+      state.levelOneAirTimer = 0;
       }
       if (state.level === 2) {
         state.copBossActive = true;
@@ -758,8 +770,9 @@
         platforms.push(step2);
         const upper2 = createPlatform(player.x + 610, world.groundY - 140, 4 * 36, 14);
         platforms.push(upper2);
+        state.levelOneBillTriggerX2 = upper2.x + upper2.w + 40;
         obstacles.push({
-          x: upper2.x + 30,
+          x: upper2.x + upper2.w - 34,
           y: upper2.y - 30,
           w: 34,
           h: 30,
@@ -1038,18 +1051,19 @@
     }
 
     function spawnCollectible() {
-      if (state.level === 1) return;
       const r = 10;
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
         state.lastCollectibleX + 280 + Math.random() * 240
       );
       if (state.level === 1) {
-        collectibles.push({
-          x: spawnX,
-          y: world.groundY - 46,
-          r
-        });
+        const usePlatform = platforms.length && Math.random() < 0.45;
+        let y = world.groundY - 46;
+        if (usePlatform) {
+          const plat = platforms[Math.floor(Math.random() * platforms.length)];
+          y = plat.y - 24;
+        }
+        collectibles.push({ x: spawnX, y, r });
         state.lastCollectibleX = spawnX;
         return;
       }
@@ -1300,12 +1314,34 @@
         state.billManX = state.billManMidX;
         state.billRocketTimer = state.time;
       }
-      if (state.level === 1 && state.billManStage === 1 && !state.billManActive && player.x >= state.levelOneBillTriggerX + 120) {
+      if (state.level === 1 && state.billManStage === 2 && !state.billManActive && player.x >= state.levelOneBillTriggerX2) {
         state.billManActive = true;
         state.billManStage = 5;
         state.billManHp = 20;
         state.billManX = player.x + world.width * 0.6;
         state.billRocketTimer = state.time;
+      }
+
+      if (state.level === 1 && player.x >= state.levelEndX * 0.5) {
+        if (state.time - state.levelOneAirTimer >= 2.4 + Math.random() * 1.2) {
+          const spawnX = Math.max(
+            state.cameraX + world.width + 160,
+            state.lastObstacleX + 260 + Math.random() * 200
+          );
+          obstacles.push({
+            x: spawnX,
+            y: world.groundY - 220 - Math.random() * 120,
+            w: 32,
+            h: 28,
+            type: "airroach",
+            speed: 70,
+            vx: -1,
+            phase: Math.random() * Math.PI * 2,
+            hp: 1
+          });
+          state.lastObstacleX = spawnX;
+          state.levelOneAirTimer = state.time;
+        }
       }
 
       if (state.level === 1 && state.billManStage === 0 && player.x >= state.levelOneBillTriggerX) {
@@ -1398,7 +1434,7 @@
         state.lastSpawn = state.time;
       }
 
-      if (state.time - state.lastCollectible > 0.9 + Math.random() * 1.1) {
+      if (state.time - state.lastCollectible > (state.level === 1 ? 1.2 + Math.random() * 1.0 : 0.9 + Math.random() * 1.1)) {
         spawnCollectible();
         state.lastCollectible = state.time;
       }
@@ -1478,6 +1514,22 @@
         state.enemyShotTimer = state.time;
       }
 
+      if (state.level === 1 && player.x >= state.levelEndX * 0.5 && state.time - state.enemyShotTimer >= 1.6) {
+        const airRoaches = obstacles.filter((obs) => obs.type === "airroach");
+        if (airRoaches.length) {
+          const shooter = airRoaches[Math.floor(Math.random() * airRoaches.length)];
+          enemyShots.push({
+            x: shooter.x,
+            y: shooter.y + 18,
+            r: 6,
+            vx: 0,
+            vy: 220,
+            life: 3
+          });
+        }
+        state.enemyShotTimer = state.time;
+      }
+
       if (state.level >= 3 && state.time - state.enemyShotTimer >= 3.5) {
         const birds = obstacles.filter((obs) => obs.type === "bird");
         if (birds.length) {
@@ -1508,6 +1560,7 @@
 
       enemyShots.forEach((shot) => {
         shot.x += shot.vx * dt;
+        shot.y += (shot.vy || 0) * dt;
         shot.life -= dt;
       });
 
@@ -1548,7 +1601,7 @@
         }
       }
       for (let i = enemyShots.length - 1; i >= 0; i -= 1) {
-        if (enemyShots[i].life <= 0 || enemyShots[i].x < cleanupX) {
+        if (enemyShots[i].life <= 0 || enemyShots[i].x < cleanupX || enemyShots[i].y > world.height + 120) {
           enemyShots.splice(i, 1);
         }
       }
@@ -1564,6 +1617,21 @@
       }
 
       const prevY = player.y;
+      const wasDucking = player.ducking;
+      if (input.down && player.vy === 0) {
+        player.ducking = true;
+      } else {
+        player.ducking = false;
+      }
+      if (player.ducking && !wasDucking) {
+        const newH = player.standH * 0.6;
+        player.y += player.h - newH;
+        player.h = newH;
+      } else if (!player.ducking && wasDucking) {
+        const newH = player.standH;
+        player.y -= newH - player.h;
+        player.h = newH;
+      }
       player.vy += state.gravity * dt;
       player.y += player.vy * dt;
 
@@ -2790,6 +2858,9 @@
       if (event.code === "ArrowRight" || event.code === "KeyD") {
         input.right = true;
       }
+      if (event.code === "ArrowDown" || event.code === "KeyS") {
+        input.down = true;
+      }
       if (event.code === "KeyR" && state.dead) {
         resetGame();
       }
@@ -2801,6 +2872,9 @@
       }
       if (event.code === "ArrowRight" || event.code === "KeyD") {
         input.right = false;
+      }
+      if (event.code === "ArrowDown" || event.code === "KeyS") {
+        input.down = false;
       }
     });
 
@@ -2874,62 +2948,58 @@
     }
 
     if (isTouch) {
-      const activeTouches = {
-        left: new Set(),
-        right: new Set()
-      };
+      let dpadPointerId = null;
+      let dpadJumped = false;
 
-      function syncTouchDirections() {
-        input.left = activeTouches.left.size > 0;
-        input.right = activeTouches.right.size > 0;
+      function updateDpadFromPoint(clientX, clientY) {
+        if (!dpad) return;
+        const rect = dpad.getBoundingClientRect();
+        const cx = rect.left + rect.width * 0.5;
+        const cy = rect.top + rect.height * 0.5;
+        const dx = clientX - cx;
+        const dy = clientY - cy;
+        const threshold = Math.min(rect.width, rect.height) * 0.18;
+        input.left = dx < -threshold;
+        input.right = dx > threshold;
+        input.down = dy > threshold;
+        if (dy < -threshold) {
+          if (!dpadJumped) {
+            queueJump();
+            if (!state.spokenStart && state.running && !state.dead) {
+              speakYeah();
+              state.spokenStart = true;
+            }
+            dpadJumped = true;
+          }
+        } else {
+          dpadJumped = false;
+        }
       }
 
-      function bindTouchDirection(btn, dir) {
-        if (!btn) return;
-        btn.addEventListener("touchstart", (event) => {
+      if (dpad) {
+        dpad.addEventListener("pointerdown", (event) => {
           event.preventDefault();
           hasUserInteracted = true;
-          for (const touch of event.changedTouches) {
-            activeTouches[dir].add(touch.identifier);
-          }
-          syncTouchDirections();
+          dpadPointerId = event.pointerId;
+          updateDpadFromPoint(event.clientX, event.clientY);
         }, { passive: false });
-        const clearTouches = (event) => {
-          for (const touch of event.changedTouches) {
-            activeTouches[dir].delete(touch.identifier);
-          }
-          syncTouchDirections();
+        dpad.addEventListener("pointermove", (event) => {
+          if (event.pointerId !== dpadPointerId) return;
+          event.preventDefault();
+          updateDpadFromPoint(event.clientX, event.clientY);
+        }, { passive: false });
+        const clearDpad = (event) => {
+          if (event.pointerId !== dpadPointerId) return;
+          event.preventDefault();
+          dpadPointerId = null;
+          input.left = false;
+          input.right = false;
+          input.down = false;
+          dpadJumped = false;
         };
-        btn.addEventListener("touchend", clearTouches, { passive: false });
-        btn.addEventListener("touchcancel", clearTouches, { passive: false });
+        dpad.addEventListener("pointerup", clearDpad, { passive: false });
+        dpad.addEventListener("pointercancel", clearDpad, { passive: false });
       }
-
-      bindTouchDirection(dpadLeft, "left");
-      bindTouchDirection(dpadRight, "right");
-
-      bindHold(dpadLeft, () => {
-        input.left = true;
-        input.right = false;
-      }, () => {
-        input.left = false;
-      });
-
-      bindHold(dpadRight, () => {
-        input.right = true;
-        input.left = false;
-      }, () => {
-        input.right = false;
-      });
-
-      bindHold(dpadUp, () => {
-        queueJump();
-        if (!state.spokenStart && state.running && !state.dead) {
-          speakYeah();
-          state.spokenStart = true;
-        }
-      }, () => {});
-
-      bindHold(dpadDown, () => {}, () => {});
 
       if (fireBtn) {
         fireBtn.addEventListener("touchstart", (event) => {
