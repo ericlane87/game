@@ -1103,8 +1103,8 @@
         state.lastPlatformY = brick.y;
       }
 
-      const stairStart = baseX + 2100;
-      for (let i = 0; i < 5; i += 1) {
+      const stairStart = baseX + 1300;
+      for (let i = 0; i < 6; i += 1) {
         const plat = createPlatform(stairStart + i * 60, yLow - i * 40, 60, 14);
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
