@@ -2453,6 +2453,12 @@
       queueFire();
     });
 
+    window.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      hasUserInteracted = true;
+      queueFire();
+    }, { passive: true });
+
     if (fireBtn) {
       fireBtn.addEventListener("click", () => {
         hasUserInteracted = true;
