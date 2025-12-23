@@ -423,6 +423,8 @@
       kidY: 0,
       kidHits: 0,
       kidAlive: true,
+      kidBurstTimer: 0,
+      kidBurstCount: 0,
       lastPlant: 0,
       invincibleTimer: 0,
       copCarActive: false,
@@ -508,6 +510,8 @@
       state.lastPlant = 0;
       state.kidHits = 0;
       state.kidAlive = true;
+      state.kidBurstTimer = 0;
+      state.kidBurstCount = 0;
       state.invincibleTimer = 0;
       state.copCarActive = false;
       state.copCarX = 0;
@@ -718,16 +722,8 @@
         player.vy = -state.jumpPower;
         player.jumpsLeft -= 1;
         if (state.kidAlive) {
-          const dir = player.facing || 1;
-          fireballs.push({
-            x: state.kidX + 10,
-            y: state.kidY + 22,
-            r: 6,
-            vx: dir * 420,
-            vy: 0,
-            life: 1.6,
-            type: "kid"
-          });
+          state.kidBurstTimer = 0.5;
+          state.kidBurstCount = 3;
         }
       }
     }
@@ -2404,6 +2400,23 @@
       }
       if (state.beltTimer > 0) {
         state.beltTimer -= dt;
+      }
+      if (state.kidAlive && state.kidBurstCount > 0) {
+        state.kidBurstTimer -= dt;
+        if (state.kidBurstTimer <= 0) {
+          const dir = player.facing || 1;
+          fireballs.push({
+            x: state.kidX + 10,
+            y: state.kidY + 22,
+            r: 6,
+            vx: dir * 420,
+            vy: 0,
+            life: 1.6,
+            type: "kid"
+          });
+          state.kidBurstCount -= 1;
+          state.kidBurstTimer = 0.5;
+        }
       }
 
       requestAnimationFrame(loop);
