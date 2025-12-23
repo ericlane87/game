@@ -750,10 +750,6 @@
         const upper = createPlatform(player.x + 330, world.groundY - 140, 4 * 36, 14);
         platforms.push(upper);
         state.levelOneBillTriggerX = upper.x + upper.w + 40;
-        collectibles.push(
-          { x: upper.x + upper.w * 0.32, y: upper.y - 24, r: 10 },
-          { x: upper.x + upper.w * 0.68, y: upper.y - 24, r: 10 }
-        );
         obstacles.push({
           x: player.x + 260,
           y: world.groundY - 30,
@@ -782,6 +778,40 @@
           phase: Math.random() * Math.PI * 2,
           hp: 1
         });
+        const step3 = createPlatform(player.x + 860, world.groundY - 60, 46, 14);
+        step3.tint = "#c54b4b";
+        platforms.push(step3);
+        const upper3 = createPlatform(player.x + 930, world.groundY - 140, 4 * 36, 14);
+        platforms.push(upper3);
+        obstacles.push({
+          x: upper3.x + upper3.w - 34,
+          y: upper3.y - 30,
+          w: 34,
+          h: 30,
+          type: "roach",
+          speed: 70,
+          vx: -1,
+          phase: Math.random() * Math.PI * 2,
+          hp: 1
+        });
+        const star1 = createPlatform(player.x + 1240, world.groundY - 160, 60, 14);
+        star1.isQuestion = true;
+        star1.hasStar = true;
+        star1.tint = "#2faa59";
+        platforms.push(star1);
+        addAccessSteps(star1);
+        const star2 = createPlatform(player.x + 1480, world.groundY - 220, 60, 14);
+        star2.isQuestion = true;
+        star2.hasStar = true;
+        star2.tint = "#2faa59";
+        platforms.push(star2);
+        addAccessSteps(star2);
+        const star3 = createPlatform(player.x + 1720, world.groundY - 180, 60, 14);
+        star3.isQuestion = true;
+        star3.hasStar = true;
+        star3.tint = "#2faa59";
+        platforms.push(star3);
+        addAccessSteps(star3);
       }
       seedStartPlant();
       if (state.level !== 1) {
@@ -1056,6 +1086,7 @@
         state.cameraX + world.width + 160,
         state.lastCollectibleX + 280 + Math.random() * 240
       );
+      if (state.level === 1 && player.x < state.levelEndX * 0.2) return;
       if (state.level === 1) {
         const usePlatform = platforms.length && Math.random() < 0.45;
         let y = world.groundY - 46;
@@ -1347,7 +1378,7 @@
       if (state.level === 1 && state.billManStage === 0 && player.x >= state.levelOneBillTriggerX) {
         state.billManActive = true;
         state.billManStage = 1;
-        state.billManHp = 3;
+        state.billManHp = 6;
         state.billManX = player.x + world.width * 0.6;
         state.billRocketTimer = state.time;
         state.levelOneBillTriggerX = Number.POSITIVE_INFINITY;
