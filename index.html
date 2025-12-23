@@ -705,7 +705,11 @@
         state.copBossY = world.groundY - 88;
         state.copBossFireTimer = state.time;
       }
-      seedPlatformsForLevel(state.level);
+      if (state.level === 1) {
+        seedLevelOneLayout();
+      } else {
+        seedPlatformsForLevel(state.level);
+      }
       platforms.push({
         x: player.x + 240,
         y: world.groundY - 140,
@@ -1065,12 +1069,46 @@
     }
 
     function seedPlatformsForLevel(level) {
+      if (level === 1) return;
       const count = level === 3 ? 10 : 8;
       for (let i = 0; i < count; i += 1) {
         spawnPlatform();
       }
       for (let i = 0; i < 2; i += 1) {
         spawnLowPlatformChain();
+      }
+    }
+
+    function seedLevelOneLayout() {
+      const baseX = player.x + 220;
+      const yLow = world.groundY - 120;
+      const yMid = world.groundY - 200;
+      const yHigh = world.groundY - 280;
+
+      const bricks = [
+        { x: baseX + 120, y: yLow, w: 140 },
+        { x: baseX + 360, y: yLow, w: 160 },
+        { x: baseX + 620, y: yMid, w: 160 },
+        { x: baseX + 900, y: yMid, w: 200 },
+        { x: baseX + 1260, y: yHigh, w: 180 },
+        { x: baseX + 1560, y: yMid, w: 160 },
+        { x: baseX + 1860, y: yLow, w: 180 }
+      ];
+
+      for (const brick of bricks) {
+        const plat = createPlatform(brick.x, brick.y, brick.w, 14);
+        platforms.push(plat);
+        addAccessSteps(plat);
+        state.lastPlatformX = Math.max(state.lastPlatformX, brick.x + brick.w);
+        state.lastPlatformY = brick.y;
+      }
+
+      const stairStart = baseX + 2100;
+      for (let i = 0; i < 5; i += 1) {
+        const plat = createPlatform(stairStart + i * 60, yLow - i * 40, 60, 14);
+        platforms.push(plat);
+        state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
+        state.lastPlatformY = plat.y;
       }
     }
 
@@ -1297,11 +1335,11 @@
         return;
       }
 
-      if (platforms.length < 14 && state.time - state.lastPlatform > 0.5) {
+      if (state.level !== 1 && platforms.length < 14 && state.time - state.lastPlatform > 0.5) {
         spawnPlatform();
         state.lastPlatform = state.time;
       }
-      if (state.time - state.lastPlatform > 1.4 && Math.random() < 0.4) {
+      if (state.level !== 1 && state.time - state.lastPlatform > 1.4 && Math.random() < 0.4) {
         spawnLowPlatformChain();
         state.lastPlatform = state.time;
       }
