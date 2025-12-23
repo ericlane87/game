@@ -409,6 +409,9 @@
       copCarX: 0,
       copCarY: 0,
       copCarTimer: 0,
+      dogsActive: false,
+      dogsX: 0,
+      dogs: [],
       copBossActive: false,
       copBossX: 0,
       copBossY: 0,
@@ -488,6 +491,9 @@
       state.copCarX = 0;
       state.copCarY = 0;
       state.copCarTimer = 0;
+      state.dogsActive = false;
+      state.dogsX = 0;
+      state.dogs = [];
       state.copBossActive = false;
       state.copBossX = 0;
       state.copBossY = 0;
@@ -975,6 +981,16 @@
         }
       }
 
+      if (state.copCarActive && player.x >= state.levelEndX * 0.5) {
+        state.copCarActive = false;
+        state.dogsActive = true;
+        state.dogsX = state.cameraX + 40;
+        state.dogs = Array.from({ length: 5 }, (_, i) => ({
+          offset: i * 28,
+          y: world.groundY - 28
+        }));
+      }
+
       if (state.level <= 2 && state.billManStage === 0 && player.x >= state.billManMidX - world.width * 0.9) {
         state.billManActive = true;
         state.billManStage = 1;
@@ -984,7 +1000,23 @@
       }
 
       if (state.copCarActive) {
-        state.copCarX += 210 * dt;
+        const targetX = player.x - 120;
+        const step = 210 * dt;
+        if (state.copCarX < targetX) {
+          state.copCarX = Math.min(targetX, state.copCarX + step);
+        } else {
+          state.copCarX = Math.max(targetX, state.copCarX - step);
+        }
+      }
+
+      if (state.dogsActive) {
+        const targetX = player.x - 120;
+        const step = 210 * dt;
+        if (state.dogsX < targetX) {
+          state.dogsX = Math.min(targetX, state.dogsX + step);
+        } else {
+          state.dogsX = Math.max(targetX, state.dogsX - step);
+        }
       }
 
       if (state.level === 2 && state.copBossActive && state.copBossHp > 0) {
@@ -1265,6 +1297,22 @@
           state.deathCause = "enemy";
           die();
           return;
+        }
+      }
+
+      if (state.dogsActive) {
+        for (const dog of state.dogs) {
+          const dogBox = {
+            x: state.dogsX + dog.offset,
+            y: dog.y,
+            w: 24,
+            h: 20
+          };
+          if (rectsOverlap(playerBox, dogBox)) {
+            state.deathCause = "enemy";
+            die();
+            return;
+          }
         }
       }
       const kidBox = {
@@ -1922,6 +1970,25 @@
       ctx.restore();
     }
 
+    function drawDogs() {
+      if (!state.dogsActive) return;
+      ctx.save();
+      for (const dog of state.dogs) {
+        const screenX = state.dogsX + dog.offset - state.cameraX;
+        const y = dog.y;
+        ctx.translate(screenX, y);
+        ctx.fillStyle = "#6b4b35";
+        ctx.fillRect(0, 8, 24, 12);
+        ctx.fillStyle = "#3b2a1f";
+        ctx.fillRect(14, 4, 10, 8);
+        ctx.fillStyle = "#0f0f14";
+        ctx.fillRect(4, 18, 6, 4);
+        ctx.fillRect(14, 18, 6, 4);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      ctx.restore();
+    }
+
     function drawCopBoss() {
       if (!state.copBossActive || state.copBossHp <= 0) return;
       const screenX = state.copBossX - state.cameraX;
@@ -2183,6 +2250,7 @@
 
       drawTrapHouse();
       drawCopCar();
+      drawDogs();
       drawCopBoss();
       drawCourier();
       drawKid();
