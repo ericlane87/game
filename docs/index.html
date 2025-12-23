@@ -1098,17 +1098,19 @@
     }
 
     function addAccessSteps(plat) {
-      const maxStep = 90;
+      const stepRise = 20;
+      const stepWidth = 48;
       const rise = world.groundY - 16 - plat.y;
-      if (rise <= maxStep) return;
-      const stepCount = Math.min(4, Math.ceil(rise / maxStep));
+      if (rise <= stepRise) return;
+      const stepCount = Math.min(6, Math.ceil(rise / stepRise));
       for (let i = 1; i <= stepCount; i += 1) {
         const step = createPlatform(
-          plat.x - i * 90,
-          Math.min(world.groundY - 120, plat.y + i * maxStep),
-          70,
+          plat.x - i * (stepWidth + 6),
+          Math.min(world.groundY - 120, plat.y + i * stepRise),
+          stepWidth,
           12
         );
+        step.tint = "#c54b4b";
         platforms.push(step);
         state.lastPlatformX = Math.max(state.lastPlatformX, step.x + step.w);
         state.lastPlatformY = step.y;
