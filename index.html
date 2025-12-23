@@ -1111,44 +1111,42 @@
       const yHigh = world.groundY - 280;
 
       const bricks = [
-        { x: baseX + 140, y: yLow, w: 140 },
-        { x: baseX + 360, y: yLow, w: 160 },
-        { x: baseX + 600, y: yMid, w: 140 },
-        { x: baseX + 820, y: yMid, w: 200 },
-        { x: baseX + 1140, y: yHigh, w: 180 },
-        { x: baseX + 1400, y: yMid, w: 160 },
-        { x: baseX + 1680, y: yLow, w: 200 },
-        { x: baseX + 1980, y: yMid, w: 160 },
-        { x: baseX + 2240, y: yHigh, w: 160 }
+        { x: baseX + 120, y: yLow, w: 140 },
+        { x: baseX + 320, y: yLow, w: 140 },
+        { x: baseX + 540, y: yMid, w: 160 },
+        { x: baseX + 780, y: yMid, w: 200 },
+        { x: baseX + 1080, y: yHigh, w: 180 },
+        { x: baseX + 1380, y: yMid, w: 170 },
+        { x: baseX + 1660, y: yLow, w: 200 },
+        { x: baseX + 1960, y: yMid, w: 160 }
       ];
 
       for (let i = 0; i < bricks.length; i += 1) {
         const brick = bricks[i];
         const plat = createPlatform(brick.x, brick.y, brick.w, 14);
-        if (i === 1 || i === 4 || i === 7) {
+        if (i === 1 || i === 3 || i === 6) {
           plat.isQuestion = true;
           plat.used = false;
         }
-        if (i === 4 || i === 7) {
+        if (i === 3 || i === 6) {
           plat.hasStar = true;
         }
         platforms.push(plat);
-        addAccessSteps(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, brick.x + brick.w);
         state.lastPlatformY = brick.y;
       }
 
-      const stairStart = baseX + 1320;
+      const stairStart = baseX + 1160;
       for (let i = 0; i < 6; i += 1) {
-        const plat = createPlatform(stairStart + i * 60, yLow - i * 40, 60, 14);
+        const plat = createPlatform(stairStart + i * 58, yLow - i * 36, 58, 14);
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
         state.lastPlatformY = plat.y;
       }
 
-      const stairStart2 = baseX + 2360;
+      const stairStart2 = baseX + 2080;
       for (let i = 0; i < 5; i += 1) {
-        const plat = createPlatform(stairStart2 + i * 60, yLow - i * 40, 60, 14);
+        const plat = createPlatform(stairStart2 + i * 58, yLow - i * 36, 58, 14);
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
         state.lastPlatformY = plat.y;
@@ -1158,13 +1156,13 @@
     function seedLevelOnePipes() {
       const baseX = player.x + 520;
       state.pipes = [
-        { x: baseX + 160, h: 44 },
-        { x: baseX + 700, h: 60 },
-        { x: baseX + 1320, h: 50 }
+        { x: baseX + 180, h: 44 },
+        { x: baseX + 740, h: 60 },
+        { x: baseX + 1480, h: 50 }
       ];
       state.popUps = [
         {
-          x: baseX + 700,
+          x: baseX + 740,
           pipeH: 60,
           officeH: 48,
           w: 56,
@@ -1178,9 +1176,8 @@
 
     function seedLevelOneGaps() {
       state.gaps = [
-        { x: player.x + 760, w: 110 },
-        { x: player.x + 1480, w: 120 },
-        { x: player.x + 2280, w: 120 }
+        { x: player.x + 980, w: 120 },
+        { x: player.x + 1880, w: 130 }
       ];
     }
 
