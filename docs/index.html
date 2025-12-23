@@ -467,19 +467,19 @@
     };
 
     const levelConfigs = [
-      { label: "TRAP HOUSE", endX: 7800 },
-      { label: "ROACH MOTEL", endX: 18000 },
+      { label: "SNAP OFFICE", endX: 7800 },
+      { label: "TANF CENTER", endX: 18000 },
       { label: "WIC OFFICE", endX: 19600 },
-      { label: "BODEGA", endX: 21000, boss: { name: "REPO CHIEF", hp: 18, fireRate: 3.2, followUp: 1.1, speed: 90, jumpRate: 4.5, shirt: "#3a2f4b", sign: "#f6f1e8" } },
-      { label: "BARBER SHOP", endX: 22000, boss: { name: "TOW CAPTAIN", hp: 20, fireRate: 3.0, followUp: 1.0, speed: 92, jumpRate: 4.3, shirt: "#2d364b", sign: "#ffe6a7" } },
-      { label: "CHECK CASHING", endX: 23000, boss: { name: "SWEEP BOSS", hp: 22, fireRate: 2.8, followUp: 0.9, speed: 95, jumpRate: 4.1, shirt: "#2d4b3a", sign: "#f6f1e8" } },
-      { label: "LAUNDROMAT", endX: 24000, boss: { name: "TICKET MASTER", hp: 24, fireRate: 2.7, followUp: 0.9, speed: 98, jumpRate: 3.9, shirt: "#4b2d2d", sign: "#e5f4ff" } },
-      { label: "STOOP HOUSE", endX: 25000, boss: { name: "CODE ENFORCER", hp: 26, fireRate: 2.6, followUp: 0.8, speed: 100, jumpRate: 3.8, shirt: "#44304b", sign: "#fff0cc" } },
-      { label: "CORNER STORE", endX: 26000, boss: { name: "BLOCK CAPTAIN", hp: 28, fireRate: 2.5, followUp: 0.8, speed: 102, jumpRate: 3.7, shirt: "#2f4b4b", sign: "#f6f1e8" } },
-      { label: "PAWN SHOP", endX: 27000, boss: { name: "NIGHT WATCH", hp: 30, fireRate: 2.4, followUp: 0.8, speed: 104, jumpRate: 3.6, shirt: "#4b3a2d", sign: "#ffe6a7" } },
-      { label: "COMMUNITY CLINIC", endX: 28000, boss: { name: "METER MAID", hp: 32, fireRate: 2.3, followUp: 0.7, speed: 106, jumpRate: 3.5, shirt: "#2d3e4b", sign: "#f6f1e8" } },
-      { label: "REC CENTER", endX: 29000, boss: { name: "ZONE MARSHAL", hp: 34, fireRate: 2.2, followUp: 0.7, speed: 108, jumpRate: 3.4, shirt: "#3b2d4b", sign: "#ffe6a7" } },
-      { label: "FOOD PANTRY", endX: 30000, boss: { name: "CURFEW CHIEF", hp: 36, fireRate: 2.1, followUp: 0.6, speed: 110, jumpRate: 3.3, shirt: "#2d3a4b", sign: "#f6f1e8" } }
+      { label: "MEDICAID CLINIC", endX: 21000, boss: { name: "REPO CHIEF", hp: 18, fireRate: 3.2, followUp: 1.1, speed: 90, jumpRate: 4.5, shirt: "#3a2f4b", sign: "#f6f1e8" } },
+      { label: "SECTION 8", endX: 22000, boss: { name: "TOW CAPTAIN", hp: 20, fireRate: 3.0, followUp: 1.0, speed: 92, jumpRate: 4.3, shirt: "#2d364b", sign: "#ffe6a7" } },
+      { label: "CHIP OFFICE", endX: 23000, boss: { name: "SWEEP BOSS", hp: 22, fireRate: 2.8, followUp: 0.9, speed: 95, jumpRate: 4.1, shirt: "#2d4b3a", sign: "#f6f1e8" } },
+      { label: "HEAD START", endX: 24000, boss: { name: "TICKET MASTER", hp: 24, fireRate: 2.7, followUp: 0.9, speed: 98, jumpRate: 3.9, shirt: "#4b2d2d", sign: "#e5f4ff" } },
+      { label: "LIHEAP OFFICE", endX: 25000, boss: { name: "CODE ENFORCER", hp: 26, fireRate: 2.6, followUp: 0.8, speed: 100, jumpRate: 3.8, shirt: "#44304b", sign: "#fff0cc" } },
+      { label: "SSI SERVICES", endX: 26000, boss: { name: "BLOCK CAPTAIN", hp: 28, fireRate: 2.5, followUp: 0.8, speed: 102, jumpRate: 3.7, shirt: "#2f4b4b", sign: "#f6f1e8" } },
+      { label: "HUD OFFICE", endX: 27000, boss: { name: "NIGHT WATCH", hp: 30, fireRate: 2.4, followUp: 0.8, speed: 104, jumpRate: 3.6, shirt: "#4b3a2d", sign: "#ffe6a7" } },
+      { label: "CCDF CENTER", endX: 28000, boss: { name: "METER MAID", hp: 32, fireRate: 2.3, followUp: 0.7, speed: 106, jumpRate: 3.5, shirt: "#2d3e4b", sign: "#f6f1e8" } },
+      { label: "EITC HUB", endX: 29000, boss: { name: "ZONE MARSHAL", hp: 34, fireRate: 2.2, followUp: 0.7, speed: 108, jumpRate: 3.4, shirt: "#3b2d4b", sign: "#ffe6a7" } },
+      { label: "CSBG OFFICE", endX: 30000, boss: { name: "CURFEW CHIEF", hp: 36, fireRate: 2.1, followUp: 0.6, speed: 110, jumpRate: 3.3, shirt: "#2d3a4b", sign: "#f6f1e8" } }
     ];
 
     const state = {
@@ -533,6 +533,12 @@
       billJumpRate: 4.5,
       levelOneAirTimer: 0,
       levelOneAirBurstTimer: 0,
+      levelOneTraps: [],
+      housingBossActive: false,
+      housingBossX: 0,
+      housingBossY: 0,
+      housingBossHp: 10,
+      housingBossNextShot: 0,
       beltTimer: 0,
       kidX: 0,
       kidY: 0,
@@ -581,7 +587,7 @@
       const ratio = window.devicePixelRatio || 1;
       world.width = window.innerWidth;
       world.height = window.innerHeight;
-      world.groundY = world.height * 0.78;
+      world.groundY = world.height * 0.58;
       world.scale = ratio;
       canvas.width = world.width * ratio;
       canvas.height = world.height * ratio;
@@ -710,6 +716,12 @@
       state.levelOneBillTriggerX2 = 0;
       state.levelOneAirTimer = 0;
       state.levelOneAirBurstTimer = 0;
+      state.levelOneTraps = [];
+      state.housingBossActive = false;
+      state.housingBossX = 0;
+      state.housingBossY = 0;
+      state.housingBossHp = 10;
+      state.housingBossNextShot = 0;
       } else {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = 0;
@@ -719,6 +731,12 @@
       state.levelOneBillTriggerX2 = 0;
       state.levelOneAirTimer = 0;
       state.levelOneAirBurstTimer = 0;
+      state.levelOneTraps = [];
+      state.housingBossActive = false;
+      state.housingBossX = 0;
+      state.housingBossY = 0;
+      state.housingBossHp = 10;
+      state.housingBossNextShot = 0;
       }
       if (state.level === 2) {
         state.copBossActive = true;
@@ -818,6 +836,7 @@
         star3.tint = "#2faa59";
         platforms.push(star3);
         addAccessSteps(star3);
+        seedLevelOneTraps();
 
         const extraPlatforms = [
           createPlatform(player.x + 2100, world.groundY - 160, 140, 14),
@@ -1242,6 +1261,13 @@
       });
     }
 
+    function seedLevelOneTraps() {
+      state.levelOneTraps = [
+        { x: player.x + 1320, w: 50, h: 48, upTime: 1.6, downTime: 1.6, offset: Math.random() * 2 },
+        { x: player.x + 2040, w: 50, h: 48, upTime: 1.8, downTime: 1.6, offset: Math.random() * 2 }
+      ];
+    }
+
     function spawnPlant() {
       if (state.level === 1) return;
       const spawnX = Math.max(
@@ -1407,6 +1433,14 @@
         state.billRocketTimer = state.time;
       }
 
+      if (state.level === 1 && player.x >= state.levelEndX - 700 && !state.housingBossActive) {
+        state.housingBossActive = true;
+        state.housingBossHp = 10;
+        state.housingBossX = state.levelEndX - 520;
+        state.housingBossY = world.groundY - 70;
+        state.housingBossNextShot = state.time + 1 + Math.random() * 4;
+      }
+
       if (state.level === 1 && player.x >= state.levelEndX * 0.5) {
         if (state.time - state.levelOneAirTimer >= 2.4 + Math.random() * 1.2) {
           const spawnX = Math.max(
@@ -1426,6 +1460,21 @@
           });
           state.lastObstacleX = spawnX;
           state.levelOneAirTimer = state.time;
+        }
+      }
+
+      if (state.housingBossActive) {
+        const targetDir = player.x > state.housingBossX ? 1 : -1;
+        state.housingBossX += targetDir * 40 * dt;
+        if (state.time >= state.housingBossNextShot) {
+          enemyShots.push({
+            x: state.housingBossX,
+            y: player.y + player.h * 0.2,
+            r: 6,
+            vx: targetDir * 260,
+            life: 3
+          });
+          state.housingBossNextShot = state.time + 1 + Math.random() * 4;
         }
       }
 
@@ -1500,7 +1549,7 @@
         state.copBossY = world.groundY - 88 - state.copBossJumpOffset;
         if (state.time - state.copBossFireTimer >= 3) {
           const targetDirFire = player.x > state.copBossX ? 1 : -1;
-          const targetY = player.y + player.h * 0.5;
+          const targetY = player.y + player.h * 0.2;
           enemyShots.push({
             x: state.copBossX,
             y: targetY,
@@ -1627,7 +1676,7 @@
         if (helis.length) {
           const shooter = helis[Math.floor(Math.random() * helis.length)];
           const targetDir = player.x > shooter.x ? 1 : -1;
-          const targetY = player.y + player.h * 0.5;
+          const targetY = player.y + player.h * 0.2;
           enemyShots.push({
             x: shooter.x,
             y: targetY,
@@ -1660,7 +1709,7 @@
         if (birds.length) {
           const shooter = birds[Math.floor(Math.random() * birds.length)];
           const targetDir = player.x > shooter.x ? 1 : -1;
-          const targetY = player.y + player.h * 0.5;
+          const targetY = player.y + player.h * 0.2;
           enemyShots.push({
             x: shooter.x,
             y: targetY,
@@ -1850,6 +1899,19 @@
           return;
         }
       }
+      if (state.housingBossActive && state.housingBossHp > 0) {
+        const bossBox = {
+          x: state.housingBossX - 30,
+          y: state.housingBossY,
+          w: 60,
+          h: 70
+        };
+        if (rectsOverlap(playerBox, bossBox)) {
+          state.deathCause = "enemy";
+          die();
+          return;
+        }
+      }
       if (state.copCarActive) {
         for (const car of state.copCars) {
           const carBox = {
@@ -1859,15 +1921,9 @@
             h: 30
           };
           if (rectsOverlap(playerBox, carBox)) {
-            if (state.copHitCooldown <= 0) {
-              state.meter *= 0.5;
-              state.copHitCooldown = 1.2;
-              if (state.meter <= 0) {
-                state.deathCause = "meter";
-                die();
-                return;
-              }
-            }
+            state.deathCause = "enemy";
+            die();
+            return;
           }
         }
       }
@@ -2108,6 +2164,21 @@
             if (state.copBossHp <= 0) {
               state.copBossActive = false;
               maybeDropStar(state.copBossX, state.copBossY - 20);
+            }
+          }
+        }
+      }
+      if (state.housingBossActive && state.housingBossHp > 0) {
+        for (let j = fireballs.length - 1; j >= 0; j -= 1) {
+          const fb = fireballs[j];
+          const dx = state.housingBossX - fb.x;
+          const dy = (state.housingBossY + 32) - fb.y;
+          if (Math.hypot(dx, dy) < 34 + fb.r) {
+            fireballs.splice(j, 1);
+            state.housingBossHp -= 1;
+            if (state.housingBossHp <= 0) {
+              state.housingBossActive = false;
+              maybeDropStar(state.housingBossX, state.housingBossY - 20);
             }
           }
         }
