@@ -290,6 +290,7 @@
       <div id="action-buttons">
         <button id="fire-btn" type="button">Fire</button>
         <button id="belt-btn" type="button">Belt</button>
+        <button id="burst-btn" type="button">Burst</button>
       </div>
     </div>
   </div>
@@ -306,6 +307,7 @@
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
     const beltBtn = document.getElementById("belt-btn");
+    const burstBtn = document.getElementById("burst-btn");
     const restartBtn = document.getElementById("restart-btn");
     const voiceToggle = document.getElementById("voice-toggle");
 
@@ -2123,6 +2125,13 @@
       beltBtn.addEventListener("click", () => {
         hasUserInteracted = true;
         queueBelt();
+      });
+    }
+
+    if (burstBtn) {
+      burstBtn.addEventListener("click", () => {
+        hasUserInteracted = true;
+        releaseBurst();
       });
     }
 
