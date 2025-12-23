@@ -1086,26 +1086,41 @@
       const yHigh = world.groundY - 280;
 
       const bricks = [
-        { x: baseX + 120, y: yLow, w: 140 },
-        { x: baseX + 360, y: yLow, w: 160 },
-        { x: baseX + 620, y: yMid, w: 160 },
-        { x: baseX + 900, y: yMid, w: 200 },
-        { x: baseX + 1260, y: yHigh, w: 180 },
-        { x: baseX + 1560, y: yMid, w: 160 },
-        { x: baseX + 1860, y: yLow, w: 180 }
+        { x: baseX + 140, y: yLow, w: 140 },
+        { x: baseX + 360, y: yLow, w: 140 },
+        { x: baseX + 560, y: yMid, w: 120 },
+        { x: baseX + 760, y: yMid, w: 180 },
+        { x: baseX + 1040, y: yHigh, w: 180 },
+        { x: baseX + 1280, y: yMid, w: 160 },
+        { x: baseX + 1560, y: yLow, w: 200 },
+        { x: baseX + 1860, y: yMid, w: 140 },
+        { x: baseX + 2100, y: yHigh, w: 160 }
       ];
 
-      for (const brick of bricks) {
+      for (let i = 0; i < bricks.length; i += 1) {
+        const brick = bricks[i];
         const plat = createPlatform(brick.x, brick.y, brick.w, 14);
+        if (i === 1 || i === 4 || i === 7) {
+          plat.isQuestion = true;
+          plat.used = false;
+        }
         platforms.push(plat);
         addAccessSteps(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, brick.x + brick.w);
         state.lastPlatformY = brick.y;
       }
 
-      const stairStart = baseX + 1300;
+      const stairStart = baseX + 1320;
       for (let i = 0; i < 6; i += 1) {
         const plat = createPlatform(stairStart + i * 60, yLow - i * 40, 60, 14);
+        platforms.push(plat);
+        state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
+        state.lastPlatformY = plat.y;
+      }
+
+      const stairStart2 = baseX + 2360;
+      for (let i = 0; i < 5; i += 1) {
+        const plat = createPlatform(stairStart2 + i * 60, yLow - i * 40, 60, 14);
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
         state.lastPlatformY = plat.y;
