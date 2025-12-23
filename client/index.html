@@ -49,6 +49,37 @@
       height: calc(100% - 120px);
     }
 
+    @media (max-height: 420px) {
+      .is-touch #stage {
+        padding-bottom: 84px;
+      }
+
+      .is-touch canvas {
+        height: calc(100% - 84px);
+      }
+
+      #touch-controls {
+        bottom: 2px;
+      }
+
+      #dpad {
+        grid-template-columns: 46px 46px 46px;
+        grid-template-rows: 46px 46px 46px;
+      }
+
+      #dpad button,
+      #dpad-center {
+        width: 46px;
+        height: 46px;
+      }
+
+      #action-buttons button {
+        width: 52px;
+        height: 52px;
+        font-size: 16px;
+      }
+    }
+
     #hud {
       position: absolute;
       top: 44px;
@@ -683,6 +714,7 @@
         used: false,
         hasStar: false
       });
+      addAccessSteps(platforms[platforms.length - 1]);
       seedStartPlant();
       spawnStarPack();
       for (let i = 0; i < 3; i += 1) {
@@ -930,12 +962,14 @@
     }
 
     function addAccessSteps(plat) {
-      if (plat.y >= world.groundY - 200) return;
-      const stepCount = 2;
+      const maxStep = 90;
+      const rise = world.groundY - 16 - plat.y;
+      if (rise <= maxStep) return;
+      const stepCount = Math.min(4, Math.ceil(rise / maxStep));
       for (let i = 1; i <= stepCount; i += 1) {
         const step = createPlatform(
           plat.x - i * 90,
-          Math.min(world.groundY - 120, plat.y + i * 80),
+          Math.min(world.groundY - 120, plat.y + i * maxStep),
           70,
           12
         );
