@@ -521,7 +521,7 @@
         state.goalLabel = "ROACH MOTEL";
       } else {
         state.levelEndX = 9800;
-        state.goalLabel = "BIRD NEST";
+        state.goalLabel = "WIC OFFICE";
       }
       if (state.level === 1) {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
@@ -1602,9 +1602,9 @@
       if (state.goalLabel === "ROACH MOTEL") {
         ctx.fillText("ROACH", x + width / 2, y + 22);
         ctx.fillText("MOTEL", x + width / 2, y + 38);
-      } else if (state.goalLabel === "BIRD NEST") {
-        ctx.fillText("BIRD", x + width / 2, y + 22);
-        ctx.fillText("NEST", x + width / 2, y + 38);
+      } else if (state.goalLabel === "WIC OFFICE") {
+        ctx.fillText("WIC", x + width / 2, y + 22);
+        ctx.fillText("OFFICE", x + width / 2, y + 38);
       } else {
         ctx.fillText("TRAP HOUSE", x + width / 2, y + 28);
       }
