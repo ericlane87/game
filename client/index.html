@@ -205,14 +205,18 @@
 
     #touch-controls {
       position: absolute;
+      left: 16px;
       right: 16px;
-      bottom: 20px;
+      bottom: 80px;
       display: none;
       align-items: flex-end;
+      justify-content: space-between;
       pointer-events: auto;
+      gap: 16px;
     }
 
-    #action-buttons button {
+    #action-buttons button,
+    #dpad button {
       font-family: inherit;
       font-weight: 800;
       text-transform: uppercase;
@@ -223,16 +227,32 @@
       border-radius: 18px;
       padding: 12px 16px;
       box-shadow: 0 12px 24px var(--shadow);
+      touch-action: none;
+      user-select: none;
     }
 
     #action-buttons {
       display: flex;
       flex-direction: column;
+      gap: 10px;
     }
 
     #action-buttons button {
-      width: 84px;
-      height: 58px;
+      width: 96px;
+      height: 62px;
+    }
+
+    #dpad {
+      display: grid;
+      grid-template-columns: 70px 70px;
+      grid-template-rows: 70px 70px;
+      gap: 10px;
+    }
+
+    #dpad button {
+      width: 70px;
+      height: 70px;
+      border-radius: 16px;
     }
 
     #touch-controls button:active {
@@ -281,15 +301,19 @@
         <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
         <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
         <div id="death-reason"></div>
-        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, G for burst, right click for belt. Mobile: drag to move, tap to jump, Fire/Belt buttons.</div>
+        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, G for burst, right click for belt. Mobile: D-pad to move/jump, Fire to shoot, Burst to release flower power.</div>
         <button id="restart-btn" type="button">New Game</button>
       </div>
     </div>
 
     <div id="touch-controls">
+      <div id="dpad">
+        <button id="dpad-up" type="button">Up</button>
+        <button id="dpad-right" type="button">Right</button>
+        <button id="dpad-left" type="button">Left</button>
+      </div>
       <div id="action-buttons">
         <button id="fire-btn" type="button">Fire</button>
-        <button id="belt-btn" type="button">Belt</button>
         <button id="burst-btn" type="button">Burst</button>
       </div>
     </div>
@@ -306,8 +330,10 @@
     const overlay = document.getElementById("overlay");
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
-    const beltBtn = document.getElementById("belt-btn");
     const burstBtn = document.getElementById("burst-btn");
+    const dpadUp = document.getElementById("dpad-up");
+    const dpadLeft = document.getElementById("dpad-left");
+    const dpadRight = document.getElementById("dpad-right");
     const restartBtn = document.getElementById("restart-btn");
     const voiceToggle = document.getElementById("voice-toggle");
 
@@ -327,14 +353,6 @@
       beltQueued: false,
       left: false,
       right: false
-    };
-
-    const touchMove = {
-      active: false,
-      id: null,
-      startX: 0,
-      lastX: 0,
-      moved: false
     };
 
     const world = {
@@ -2543,7 +2561,7 @@
     });
 
     window.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) return;
+      if (isTouch || event.button !== 0) return;
       hasUserInteracted = true;
       queueFire();
     }, { passive: true });
@@ -2552,13 +2570,6 @@
       fireBtn.addEventListener("click", () => {
         hasUserInteracted = true;
         queueFire();
-      });
-    }
-
-    if (beltBtn) {
-      beltBtn.addEventListener("click", () => {
-        hasUserInteracted = true;
-        queueBelt();
       });
     }
 
@@ -2588,51 +2599,43 @@
       });
     }
 
-    if (isTouch) {
-      canvas.addEventListener("pointerdown", (event) => {
+    function bindHold(btn, onDown, onUp) {
+      if (!btn) return;
+      btn.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
         hasUserInteracted = true;
-        touchMove.active = true;
-        touchMove.id = event.pointerId;
-        touchMove.startX = event.clientX;
-        touchMove.lastX = event.clientX;
-        touchMove.moved = false;
-      });
+        onDown();
+      }, { passive: false });
+      btn.addEventListener("pointerup", (event) => {
+        event.preventDefault();
+        onUp();
+      }, { passive: false });
+      btn.addEventListener("pointerleave", onUp);
+      btn.addEventListener("pointercancel", onUp);
+    }
 
-      canvas.addEventListener("pointermove", (event) => {
-        if (!touchMove.active || event.pointerId !== touchMove.id) return;
-        const dx = event.clientX - touchMove.startX;
-        touchMove.lastX = event.clientX;
-        if (Math.abs(dx) > 12) {
-          touchMove.moved = true;
-          input.left = dx < -12;
-          input.right = dx > 12;
-        } else {
-          input.left = false;
-          input.right = false;
-        }
-      });
-
-      canvas.addEventListener("pointerup", (event) => {
-        if (event.pointerId !== touchMove.id) return;
-        if (!touchMove.moved) {
-          queueJump();
-          if (!state.spokenStart && state.running && !state.dead) {
-            speakYeah();
-            state.spokenStart = true;
-          }
-        }
-        input.left = false;
+    if (isTouch) {
+      bindHold(dpadLeft, () => {
+        input.left = true;
         input.right = false;
-        touchMove.active = false;
-        touchMove.id = null;
+      }, () => {
+        input.left = false;
       });
 
-      canvas.addEventListener("pointercancel", () => {
+      bindHold(dpadRight, () => {
+        input.right = true;
         input.left = false;
+      }, () => {
         input.right = false;
-        touchMove.active = false;
-        touchMove.id = null;
       });
+
+      bindHold(dpadUp, () => {
+        queueJump();
+        if (!state.spokenStart && state.running && !state.dead) {
+          speakYeah();
+          state.spokenStart = true;
+        }
+      }, () => {});
     }
 
     resize();
