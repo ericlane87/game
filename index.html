@@ -270,7 +270,7 @@
         <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
         <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
         <div id="death-reason"></div>
-        <div id="controls">Desktop: A-D to move, Space to jump, click or F to fire. Mobile: drag to move, tap to jump, Fire button to shoot.</div>
+        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, right click for belt. Mobile: drag to move, tap to jump, Fire/Belt buttons.</div>
         <button id="restart-btn" type="button">New Game</button>
       </div>
     </div>
@@ -278,6 +278,7 @@
     <div id="touch-controls">
       <div id="action-buttons">
         <button id="fire-btn" type="button">Fire</button>
+        <button id="belt-btn" type="button">Belt</button>
       </div>
     </div>
   </div>
@@ -292,6 +293,7 @@
     const overlay = document.getElementById("overlay");
     const deathReason = document.getElementById("death-reason");
     const fireBtn = document.getElementById("fire-btn");
+    const beltBtn = document.getElementById("belt-btn");
     const restartBtn = document.getElementById("restart-btn");
     const voiceToggle = document.getElementById("voice-toggle");
 
@@ -308,6 +310,7 @@
     const input = {
       jumpQueued: false,
       fireQueued: false,
+      beltQueued: false,
       left: false,
       right: false
     };
@@ -378,6 +381,7 @@
       billFollowUpTimer: 0,
       billJumpTimer: 0,
       billJumpOffset: 0,
+      beltTimer: 0,
       voiceEnabled: true,
       spokenStart: false
     };
@@ -510,6 +514,10 @@
       input.fireQueued = true;
     }
 
+    function queueBelt() {
+      input.beltQueued = true;
+    }
+
     function selectVoice() {
       const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
       if (!voices.length) return null;
@@ -596,6 +604,40 @@
         });
       }
       state.fireMessageTimer = 0.6;
+    }
+
+    function swingBelt() {
+      if (state.dead || !state.running) return;
+      state.beltTimer = 0.25;
+      const dir = player.facing || 1;
+      const hitbox = {
+        x: player.x + (dir > 0 ? player.w : -40),
+        y: player.y + 10,
+        w: 40,
+        h: player.h - 20
+      };
+
+      for (let i = obstacles.length - 1; i >= 0; i -= 1) {
+        if (rectsOverlap(hitbox, obstacles[i])) {
+          obstacles.splice(i, 1);
+          state.score += 6;
+        }
+      }
+
+      if (state.billManActive && state.billManHp > 0) {
+        const bossBox = {
+          x: state.billManX - state.billManW * 0.5,
+          y: state.billManY,
+          w: state.billManW,
+          h: state.billManH
+        };
+        if (rectsOverlap(hitbox, bossBox)) {
+          state.billManHp = Math.max(0, state.billManHp - 2);
+          if (state.billManHp <= 0) {
+            state.billManActive = false;
+          }
+        }
+      }
     }
 
     function spawnObstacle() {
@@ -1568,6 +1610,19 @@
         ctx.fillText("EBT attack", screenX + player.w * 0.2, player.y - 34);
         ctx.restore();
       }
+
+      if (state.beltTimer > 0) {
+        const screenX = player.x - state.cameraX;
+        const dir = player.facing || 1;
+        ctx.save();
+        ctx.strokeStyle = "#c9b08a";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(screenX + player.w * 0.5, player.y + player.h * 0.5);
+        ctx.lineTo(screenX + player.w * 0.5 + dir * 40, player.y + player.h * 0.35);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     function loop(now) {
@@ -1581,6 +1636,10 @@
       if (input.fireQueued) {
         input.fireQueued = false;
         shootFireball();
+      }
+      if (input.beltQueued) {
+        input.beltQueued = false;
+        swingBelt();
       }
 
       update(dt);
@@ -1599,6 +1658,9 @@
       }
       if (state.fireMessageTimer > 0) {
         state.fireMessageTimer -= dt;
+      }
+      if (state.beltTimer > 0) {
+        state.beltTimer -= dt;
       }
 
       requestAnimationFrame(loop);
@@ -1641,7 +1703,16 @@
       }
     });
 
+    canvas.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
+
     canvas.addEventListener("mousedown", (event) => {
+      if (event.button === 2) {
+        hasUserInteracted = true;
+        queueBelt();
+        return;
+      }
       if (event.button !== 0) return;
       hasUserInteracted = true;
       queueFire();
@@ -1651,6 +1722,13 @@
       fireBtn.addEventListener("click", () => {
         hasUserInteracted = true;
         queueFire();
+      });
+    }
+
+    if (beltBtn) {
+      beltBtn.addEventListener("click", () => {
+        hasUserInteracted = true;
+        queueBelt();
       });
     }
 
