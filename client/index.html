@@ -356,6 +356,22 @@
       color: "#f6f1e8"
     };
 
+    const levelConfigs = [
+      { label: "TRAP HOUSE", endX: 15600 },
+      { label: "ROACH MOTEL", endX: 18000 },
+      { label: "WIC OFFICE", endX: 19600 },
+      { label: "BODEGA", endX: 21000, boss: { name: "REPO CHIEF", hp: 18, fireRate: 3.2, followUp: 1.1, speed: 90, jumpRate: 4.5, shirt: "#3a2f4b", sign: "#f6f1e8" } },
+      { label: "BARBER SHOP", endX: 22000, boss: { name: "TOW CAPTAIN", hp: 20, fireRate: 3.0, followUp: 1.0, speed: 92, jumpRate: 4.3, shirt: "#2d364b", sign: "#ffe6a7" } },
+      { label: "CHECK CASHING", endX: 23000, boss: { name: "SWEEP BOSS", hp: 22, fireRate: 2.8, followUp: 0.9, speed: 95, jumpRate: 4.1, shirt: "#2d4b3a", sign: "#f6f1e8" } },
+      { label: "LAUNDROMAT", endX: 24000, boss: { name: "TICKET MASTER", hp: 24, fireRate: 2.7, followUp: 0.9, speed: 98, jumpRate: 3.9, shirt: "#4b2d2d", sign: "#e5f4ff" } },
+      { label: "STOOP HOUSE", endX: 25000, boss: { name: "CODE ENFORCER", hp: 26, fireRate: 2.6, followUp: 0.8, speed: 100, jumpRate: 3.8, shirt: "#44304b", sign: "#fff0cc" } },
+      { label: "CORNER STORE", endX: 26000, boss: { name: "BLOCK CAPTAIN", hp: 28, fireRate: 2.5, followUp: 0.8, speed: 102, jumpRate: 3.7, shirt: "#2f4b4b", sign: "#f6f1e8" } },
+      { label: "PAWN SHOP", endX: 27000, boss: { name: "NIGHT WATCH", hp: 30, fireRate: 2.4, followUp: 0.8, speed: 104, jumpRate: 3.6, shirt: "#4b3a2d", sign: "#ffe6a7" } },
+      { label: "COMMUNITY CLINIC", endX: 28000, boss: { name: "METER MAID", hp: 32, fireRate: 2.3, followUp: 0.7, speed: 106, jumpRate: 3.5, shirt: "#2d3e4b", sign: "#f6f1e8" } },
+      { label: "REC CENTER", endX: 29000, boss: { name: "ZONE MARSHAL", hp: 34, fireRate: 2.2, followUp: 0.7, speed: 108, jumpRate: 3.4, shirt: "#3b2d4b", sign: "#ffe6a7" } },
+      { label: "FOOD PANTRY", endX: 30000, boss: { name: "CURFEW CHIEF", hp: 36, fireRate: 2.1, followUp: 0.6, speed: 110, jumpRate: 3.3, shirt: "#2d3a4b", sign: "#f6f1e8" } }
+    ];
+
     const state = {
       running: false,
       dead: false,
@@ -381,7 +397,7 @@
       deathCause: "",
       initialDropTimer: 0,
       level: 1,
-      levelEndX: 7800,
+      levelEndX: 15600,
       goalLabel: "TRAP HOUSE",
       burstCharges: 0,
       enemyShotTimer: 0,
@@ -398,6 +414,10 @@
       billFollowUpTimer: 0,
       billJumpTimer: 0,
       billJumpOffset: 0,
+      billMoveSpeed: 90,
+      billFireRate: 3,
+      billFollowUp: 1,
+      billJumpRate: 4.5,
       beltTimer: 0,
       kidX: 0,
       kidY: 0,
@@ -420,6 +440,8 @@
       copBossJumpTimer: 0,
       copBossJumpOffset: 0,
       billLabel: "BILL MAN",
+      billShirt: "#2c2b30",
+      billSign: "#f6f1e8",
       voiceEnabled: true,
       spokenStart: false
     };
@@ -502,6 +524,30 @@
       state.copBossJumpTimer = 0;
       state.copBossJumpOffset = 0;
       state.billLabel = state.level === 2 ? "DFAC" : "BILL MAN";
+      const levelConfig = levelConfigs[state.level - 1];
+      if (state.level === 2) {
+        state.billShirt = "#1f2a44";
+        state.billSign = "#f6f1e8";
+      } else if (levelConfig && levelConfig.boss) {
+        state.billLabel = levelConfig.boss.name;
+        state.billShirt = levelConfig.boss.shirt;
+        state.billSign = levelConfig.boss.sign;
+      } else {
+        state.billShirt = "#2c2b30";
+        state.billSign = "#f6f1e8";
+      }
+      if (levelConfig && levelConfig.boss) {
+        state.billManHp = levelConfig.boss.hp;
+        state.billMoveSpeed = levelConfig.boss.speed;
+        state.billFireRate = levelConfig.boss.fireRate;
+        state.billFollowUp = levelConfig.boss.followUp;
+        state.billJumpRate = levelConfig.boss.jumpRate;
+      } else {
+        state.billMoveSpeed = 90;
+        state.billFireRate = 3;
+        state.billFollowUp = 1;
+        state.billJumpRate = 4.5;
+      }
       state.spokenStart = false;
       obstacles.length = 0;
       platforms.length = 0;
@@ -521,16 +567,8 @@
       restartBtn.textContent = "New Game";
       state.initialDropTimer = 3;
       state.copCarTimer = 5;
-      if (state.level === 1) {
-        state.levelEndX = 15600;
-        state.goalLabel = "TRAP HOUSE";
-      } else if (state.level === 2) {
-        state.levelEndX = 18000;
-        state.goalLabel = "ROACH MOTEL";
-      } else {
-        state.levelEndX = 19600;
-        state.goalLabel = "WIC OFFICE";
-      }
+      state.levelEndX = levelConfig ? levelConfig.endX : 15600;
+      state.goalLabel = levelConfig ? levelConfig.label : "TRAP HOUSE";
       if (state.level === 1) {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = state.levelEndX - 240;
@@ -539,8 +577,7 @@
         state.billManX = player.x + world.width * 0.9;
         state.billManY = world.groundY - 84;
         state.billRocketTimer = state.time;
-      }
-      if (state.level === 2) {
+      } else {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = 0;
         state.billManX = state.billManMidX;
@@ -590,7 +627,7 @@
             : "You got caught.";
       deathReason.textContent = `${reasonText} Meter: ${Math.round(meterValue)}%`;
       if (state.deathCause === "win") {
-        restartBtn.textContent = state.level === 3 ? "New Game" : "Next Level";
+        restartBtn.textContent = state.level === levelConfigs.length ? "New Game" : "Next Level";
       } else {
         restartBtn.textContent = "New Game";
       }
@@ -774,7 +811,7 @@
       const roll = Math.random();
       const isHousing = state.level >= 2 ? roll < 0.3 : roll < 0.2;
       const isHeli = state.level === 2 && !isHousing && roll < 0.55;
-      const isBird = state.level === 3 && !isHousing && roll < 0.7;
+      const isBird = state.level >= 3 && !isHousing && roll < 0.7;
       const size = isHeli ? 38 : isBird ? 32 : isHousing ? 46 : 28 + Math.random() * 10;
       const width = isHousing ? size * 0.9 : size * 1.2;
       const spawnX = Math.max(
@@ -1083,10 +1120,10 @@
 
       if (state.billManActive) {
         const targetDir = player.x > state.billManX ? 1 : -1;
-        state.billManX += targetDir * 90 * dt;
+        state.billManX += targetDir * state.billMoveSpeed * dt;
         state.billManY = world.groundY - state.billManH - state.billJumpOffset;
 
-        if (state.time - state.billRocketTimer >= 3) {
+        if (state.time - state.billRocketTimer >= state.billFireRate) {
           const targetY = player.y + player.h * 0.5;
           billRockets.push({
             x: state.billManX,
@@ -1096,7 +1133,7 @@
             life: 4
           });
           state.billRocketTimer = state.time;
-          state.billFollowUpTimer = state.time + 1;
+          state.billFollowUpTimer = state.time + state.billFollowUp;
         }
         if (state.billFollowUpTimer > 0 && state.time >= state.billFollowUpTimer) {
           const targetY = player.y + player.h * 0.5;
@@ -1110,7 +1147,7 @@
           state.billFollowUpTimer = 0;
         }
 
-        if (state.time - state.billJumpTimer >= 4.5) {
+        if (state.time - state.billJumpTimer >= state.billJumpRate) {
           state.billJumpTimer = state.time;
           state.billJumpOffset = 32;
         }
@@ -1136,7 +1173,7 @@
         state.enemyShotTimer = state.time;
       }
 
-      if (state.level === 3 && state.time - state.enemyShotTimer >= 3.5) {
+      if (state.level >= 3 && state.time - state.enemyShotTimer >= 3.5) {
         const birds = obstacles.filter((obs) => obs.type === "bird");
         if (birds.length) {
           const shooter = birds[Math.floor(Math.random() * birds.length)];
@@ -1664,14 +1701,12 @@
       ctx.fillStyle = "#0f0f14";
       ctx.font = "bold 15px \"Impact\", sans-serif";
       ctx.textAlign = "center";
-      if (state.goalLabel === "ROACH MOTEL") {
-        ctx.fillText("ROACH", x + width / 2, y + 22);
-        ctx.fillText("MOTEL", x + width / 2, y + 38);
-      } else if (state.goalLabel === "WIC OFFICE") {
-        ctx.fillText("WIC", x + width / 2, y + 22);
-        ctx.fillText("OFFICE", x + width / 2, y + 38);
+      const parts = state.goalLabel.split(" ");
+      if (parts.length >= 2) {
+        ctx.fillText(parts[0], x + width / 2, y + 22);
+        ctx.fillText(parts.slice(1).join(" "), x + width / 2, y + 38);
       } else {
-        ctx.fillText("TRAP HOUSE", x + width / 2, y + 28);
+        ctx.fillText(state.goalLabel, x + width / 2, y + 28);
       }
       ctx.restore();
     }
@@ -1807,7 +1842,7 @@
       ctx.arc(w * 0.5, h * 0.18, w * 0.22, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#2c2b30";
+      ctx.fillStyle = state.billShirt;
       ctx.fillRect(w * 0.25, h * 0.35, w * 0.5, h * 0.5);
 
       ctx.fillStyle = "#1a1412";
@@ -1821,7 +1856,7 @@
       ctx.lineTo(w * 0.05, h * 0.8);
       ctx.stroke();
 
-      ctx.fillStyle = "#f6f1e8";
+      ctx.fillStyle = state.billSign;
       ctx.fillRect(w * 0.6, h * 0.2, w * 0.6, h * 0.4);
       ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
       ctx.lineWidth = 2;
@@ -2446,7 +2481,7 @@
       restartBtn.addEventListener("click", () => {
         hasUserInteracted = true;
         if (state.deathCause === "win") {
-          const nextLevel = state.level === 1 ? 2 : state.level === 2 ? 3 : 1;
+          const nextLevel = state.level >= levelConfigs.length ? 1 : state.level + 1;
           resetGame(nextLevel);
         } else {
           resetGame(state.level);
