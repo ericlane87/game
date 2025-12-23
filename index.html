@@ -782,9 +782,10 @@
           state.billFollowUpTimer = state.time + 1;
         }
         if (state.billFollowUpTimer > 0 && state.time >= state.billFollowUpTimer) {
+          const targetY = player.y + player.h * 0.5;
           billFireballs.push({
             x: state.billManX,
-            y: state.billManY + 30,
+            y: targetY,
             r: 7,
             vx: player.x > state.billManX ? 320 : -320,
             life: 3
