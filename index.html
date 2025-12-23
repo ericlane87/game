@@ -42,24 +42,26 @@
     }
 
     .is-touch #stage {
-      padding-bottom: 120px;
+      padding-bottom: 132px;
     }
 
     .is-touch canvas {
-      height: calc(100% - 120px);
+      height: calc(100% - 132px);
     }
 
     @media (max-height: 420px) {
       .is-touch #stage {
-        padding-bottom: 84px;
+        padding-bottom: 96px;
       }
 
       .is-touch canvas {
-        height: calc(100% - 84px);
+        height: calc(100% - 96px);
       }
 
       #touch-controls {
-        bottom: 2px;
+        bottom: 6px;
+        left: 8px;
+        right: 8px;
       }
 
       #dpad {
@@ -246,13 +248,14 @@
       position: absolute;
       left: 16px;
       right: 16px;
-      bottom: 4px;
+      bottom: 16px;
       display: none;
       align-items: flex-end;
       justify-content: space-between;
       pointer-events: auto;
       gap: 10px;
       touch-action: none;
+      z-index: 5;
     }
 
     #action-buttons button,
@@ -344,6 +347,7 @@
     }
 
     .is-touch #touch-controls {
+      position: fixed;
       display: flex;
     }
 
@@ -985,12 +989,30 @@
         state.cameraX + world.width + 160,
         state.lastCollectibleX + 280 + Math.random() * 240
       );
-      const onPlatformChance = state.level === 1 ? 0.5 : 0.7;
-      const onPlatform = platforms.length && Math.random() < onPlatformChance;
-      let y = world.groundY - 50 - Math.random() * 40;
-      if (onPlatform) {
-        const plat = platforms[Math.floor(Math.random() * platforms.length)];
-        y = plat.y - 24;
+      const roll = Math.random();
+      let y = world.groundY - 46;
+      if (roll < 0.3) {
+        y = world.groundY - 46;
+      } else if (roll < 0.6) {
+        const midPlatforms = platforms.filter((plat) => plat.y >= world.groundY - 200);
+        const target = midPlatforms.length
+          ? midPlatforms[Math.floor(Math.random() * midPlatforms.length)]
+          : null;
+        y = target ? target.y - 24 : world.groundY - 120;
+      } else {
+        const highPlatforms = platforms.filter((plat) => plat.y < world.groundY - 200);
+        let target = highPlatforms.length
+          ? highPlatforms[Math.floor(Math.random() * highPlatforms.length)]
+          : null;
+        if (!target) {
+          const highPlat = createPlatform(spawnX - 40, world.groundY - 260, 120, 14);
+          platforms.push(highPlat);
+          state.lastPlatformX = Math.max(state.lastPlatformX, highPlat.x + highPlat.w);
+          state.lastPlatformY = highPlat.y;
+          addAccessSteps(highPlat);
+          target = highPlat;
+        }
+        y = target.y - 24;
       }
       collectibles.push({
         x: spawnX,
