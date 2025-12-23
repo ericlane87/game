@@ -1381,6 +1381,21 @@
       ctx.fillRect(w * 0.22, h * 0.88, w * 0.18, h * 0.08);
       ctx.fillRect(w * 0.6, h * 0.88, w * 0.18, h * 0.08);
 
+      const stride = Math.sin(state.time * 10 + player.x * 0.02) * 4;
+      ctx.strokeStyle = "#1b1b22";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.4, h * 0.78);
+      ctx.lineTo(w * 0.38, h * 0.92 + stride);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w * 0.6, h * 0.78);
+      ctx.lineTo(w * 0.62, h * 0.92 - stride);
+      ctx.stroke();
+      ctx.fillStyle = "#f6f1e8";
+      ctx.fillRect(w * 0.3, h * 0.92 + stride - 2, w * 0.2, h * 0.06);
+      ctx.fillRect(w * 0.5, h * 0.92 - stride - 2, w * 0.2, h * 0.06);
+
       ctx.restore();
     }
 
@@ -1575,6 +1590,21 @@
       ctx.fillStyle = "#0f0f14";
       ctx.fillRect(w * 0.28, h * 0.82, w * 0.16, h * 0.14);
       ctx.fillRect(w * 0.56, h * 0.82, w * 0.16, h * 0.14);
+
+      const kidStride = Math.sin(state.time * 10 + state.kidX * 0.03) * 3;
+      ctx.strokeStyle = "#1b1b22";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.38, h * 0.7);
+      ctx.lineTo(w * 0.36, h * 0.88 + kidStride);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w * 0.62, h * 0.7);
+      ctx.lineTo(w * 0.64, h * 0.88 - kidStride);
+      ctx.stroke();
+      ctx.fillStyle = "#f6f1e8";
+      ctx.fillRect(w * 0.28, h * 0.88 + kidStride - 2, w * 0.2, h * 0.06);
+      ctx.fillRect(w * 0.52, h * 0.88 - kidStride - 2, w * 0.2, h * 0.06);
 
       ctx.restore();
     }
