@@ -959,6 +959,12 @@
       }
     }
 
+    function maybeDropStar(x, y) {
+      if (Math.random() < 0.15) {
+        stars.push({ x, y, r: 12 });
+      }
+    }
+
     function rectsOverlap(a, b) {
       return (
         a.x < b.x + b.w &&
@@ -1387,12 +1393,14 @@
           const playerFeet = player.y + player.h;
           const stompZone = obs.y + obs.h * 0.35;
           if (state.invincibleTimer > 0) {
+            maybeDropStar(obs.x + obs.w * 0.5, obs.y - 20);
             obstacles.splice(i, 1);
             state.score += 6;
           } else if (player.vy > 0 && playerFeet <= stompZone) {
             obstacles.splice(i, 1);
             player.vy = -state.jumpPower * 0.45;
             state.score += 10;
+            maybeDropStar(obs.x + obs.w * 0.5, obs.y - 20);
           } else {
             state.deathCause = "enemy";
             die();
@@ -1516,6 +1524,7 @@
                   r: 12
                 });
               }
+              maybeDropStar(obs.x + obs.w * 0.5, obs.y - 20);
               obstacles.splice(i, 1);
               state.score += 8;
             }
@@ -1541,6 +1550,7 @@
               } else if (state.billManStage === 3) {
                 state.billManStage = 4;
               }
+              maybeDropStar(state.billManX, state.billManY - 20);
               break;
             }
           }
@@ -1557,6 +1567,7 @@
             state.copBossHp -= 1;
             if (state.copBossHp <= 0) {
               state.copBossActive = false;
+              maybeDropStar(state.copBossX, state.copBossY - 20);
             }
           }
         }
