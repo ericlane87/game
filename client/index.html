@@ -982,7 +982,7 @@
 
       if (state.copCarActive) {
         const targetX = player.x - 140;
-        state.copCarX += (targetX - state.copCarX) * 0.35 * dt;
+        state.copCarX += (targetX - state.copCarX) * 0.7 * dt;
       }
 
       if (state.level === 2 && state.copBossActive && state.copBossHp > 0) {
