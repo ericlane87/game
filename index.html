@@ -497,7 +497,7 @@
       restartBtn.textContent = "New Game";
       state.initialDropTimer = 3;
       if (state.level === 1) {
-        state.copCarTimer = 3;
+        state.copCarTimer = 5;
       }
       if (state.level === 1) {
         state.levelEndX = 7800;
@@ -914,7 +914,7 @@
         state.copCarTimer -= dt;
         if (state.copCarTimer <= 0) {
           state.copCarActive = true;
-          state.copCarX = player.x - 260;
+          state.copCarX = state.cameraX + 40;
           state.copCarY = world.groundY - 36;
         }
       }
