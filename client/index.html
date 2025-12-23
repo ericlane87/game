@@ -526,8 +526,11 @@
       if (state.level === 1) {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = state.levelEndX - 240;
-        state.billManX = state.billManMidX;
+        state.billManStage = 1;
+        state.billManActive = true;
+        state.billManX = player.x + world.width * 0.9;
         state.billManY = world.groundY - 84;
+        state.billRocketTimer = state.time;
       }
       if (state.level === 2) {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
