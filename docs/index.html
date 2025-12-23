@@ -413,6 +413,7 @@
       copBossX: 0,
       copBossY: 0,
       copBossHp: 10,
+      copBossFireTimer: 0,
       copBossJumpTimer: 0,
       copBossJumpOffset: 0,
       billLabel: "BILL MAN",
@@ -491,6 +492,7 @@
       state.copBossX = 0;
       state.copBossY = 0;
       state.copBossHp = 10;
+      state.copBossFireTimer = 0;
       state.copBossJumpTimer = 0;
       state.copBossJumpOffset = 0;
       state.billLabel = state.level === 2 ? "DFAC" : "BILL MAN";
@@ -542,6 +544,7 @@
         state.copBossActive = true;
         state.copBossX = player.x + 260;
         state.copBossY = world.groundY - 88;
+        state.copBossFireTimer = state.time;
       }
       seedPlatformsForLevel(state.level);
       platforms.push({
@@ -988,6 +991,18 @@
         const targetDir = player.x > state.copBossX ? 1 : -1;
         state.copBossX += targetDir * 80 * dt;
         state.copBossY = world.groundY - 88 - state.copBossJumpOffset;
+        if (state.time - state.copBossFireTimer >= 3) {
+          const targetDirFire = player.x > state.copBossX ? 1 : -1;
+          const targetY = player.y + player.h * 0.5;
+          enemyShots.push({
+            x: state.copBossX,
+            y: targetY,
+            r: 6,
+            vx: targetDirFire * 260,
+            life: 3
+          });
+          state.copBossFireTimer = state.time;
+        }
         if (state.time - state.copBossJumpTimer >= 3 + Math.random() * 2) {
           state.copBossJumpTimer = state.time;
           state.copBossJumpOffset = 34;
