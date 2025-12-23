@@ -1070,7 +1070,7 @@
         }
       }
 
-      if (state.level === 2 && state.time - state.enemyShotTimer >= 5) {
+      if (state.level === 2 && state.time - state.enemyShotTimer >= 2.5) {
         const helis = obstacles.filter((obs) => obs.type === "heli");
         if (helis.length) {
           const shooter = helis[Math.floor(Math.random() * helis.length)];
