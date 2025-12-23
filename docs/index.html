@@ -521,6 +521,9 @@
         restartBtn.textContent = "New Game";
       }
       overlay.classList.remove("hidden");
+      if (state.deathCause !== "win") {
+        speakDeath();
+      }
     }
 
     function winLevel() {
@@ -575,6 +578,18 @@
       if (!state.voiceEnabled) return;
       if (!("speechSynthesis" in window)) return;
       const utter = new SpeechSynthesisUtterance("Green Thing Time");
+      const voice = selectVoice();
+      if (voice) utter.voice = voice;
+      utter.rate = 1.0;
+      utter.pitch = 1.0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    function speakDeath() {
+      if (!state.voiceEnabled) return;
+      if (!("speechSynthesis" in window)) return;
+      const utter = new SpeechSynthesisUtterance("they on my ass chat");
       const voice = selectVoice();
       if (voice) utter.voice = voice;
       utter.rate = 1.0;
