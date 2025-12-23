@@ -916,11 +916,13 @@
         const helis = obstacles.filter((obs) => obs.type === "heli");
         if (helis.length) {
           const shooter = helis[Math.floor(Math.random() * helis.length)];
+          const targetDir = player.x > shooter.x ? 1 : -1;
+          const targetY = player.y + player.h * 0.5;
           enemyShots.push({
             x: shooter.x,
-            y: shooter.y + shooter.h * 0.6,
+            y: targetY,
             r: 6,
-            vx: -220,
+            vx: targetDir * 260,
             life: 3
           });
         }
