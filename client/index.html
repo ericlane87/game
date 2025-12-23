@@ -386,6 +386,7 @@
       kidY: 0,
       kidHits: 0,
       kidAlive: true,
+      lastPlant: 0,
       voiceEnabled: true,
       spokenStart: false
     };
@@ -447,6 +448,7 @@
       state.billFollowUpTimer = 0;
       state.billJumpTimer = 0;
       state.billJumpOffset = 0;
+      state.lastPlant = 0;
       state.kidHits = 0;
       state.kidAlive = true;
       state.spokenStart = false;
@@ -725,6 +727,21 @@
       state.lastPlatformX = spawnX;
     }
 
+    function spawnLowPlatformChain() {
+      const baseX = Math.max(
+        state.cameraX + world.width + 120,
+        state.lastPlatformX + 140
+      );
+      const y = world.groundY - 120;
+      const widths = [140, 160, 180];
+      for (let i = 0; i < 2; i += 1) {
+        const w = widths[Math.floor(Math.random() * widths.length)];
+        const x = baseX + i * (w + 90);
+        platforms.push({ x, y, w, h: 14 });
+        state.lastPlatformX = Math.max(state.lastPlatformX, x + w);
+      }
+    }
+
     function seedPlatformsForLevel(level) {
       const baseX = player.x + 220;
       const layouts = level === 2
@@ -757,6 +774,20 @@
         y: world.groundY - 60,
         r: 14
       });
+    }
+
+    function spawnPlant() {
+      const spawnX = Math.max(
+        state.cameraX + world.width + 220,
+        state.lastCollectibleX + 320 + Math.random() * 260
+      );
+      const highY = state.level === 2 ? world.groundY - 360 : world.groundY - 320;
+      plants.push({
+        x: spawnX,
+        y: highY,
+        r: 14
+      });
+      state.lastCollectibleX = spawnX;
     }
 
     function rectsOverlap(a, b) {
@@ -818,6 +849,10 @@
         spawnPlatform();
         state.lastPlatform = state.time;
       }
+      if (state.time - state.lastPlatform > 1.4 && Math.random() < 0.4) {
+        spawnLowPlatformChain();
+        state.lastPlatform = state.time;
+      }
 
       if (state.time - state.lastSpawn > 0.7 + Math.random() * 0.9) {
         spawnObstacle();
@@ -827,6 +862,11 @@
       if (state.time - state.lastCollectible > 0.9 + Math.random() * 1.1) {
         spawnCollectible();
         state.lastCollectible = state.time;
+      }
+
+      if (state.time - state.lastPlant > 2.6 && Math.random() < 0.7) {
+        spawnPlant();
+        state.lastPlant = state.time;
       }
 
       if (state.level === 1 && !state.billManActive && player.x >= state.billManX - world.width * 0.9) {
