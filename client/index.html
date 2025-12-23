@@ -409,6 +409,12 @@
       copCarX: 0,
       copCarY: 0,
       copCarTimer: 0,
+      copBossActive: false,
+      copBossX: 0,
+      copBossY: 0,
+      copBossHp: 10,
+      copBossJumpTimer: 0,
+      copBossJumpOffset: 0,
       billLabel: "BILL MAN",
       voiceEnabled: true,
       spokenStart: false
@@ -481,6 +487,12 @@
       state.copCarX = 0;
       state.copCarY = 0;
       state.copCarTimer = 0;
+      state.copBossActive = false;
+      state.copBossX = 0;
+      state.copBossY = 0;
+      state.copBossHp = 10;
+      state.copBossJumpTimer = 0;
+      state.copBossJumpOffset = 0;
       state.billLabel = state.level === 2 ? "DFAC" : "BILL MAN";
       state.spokenStart = false;
       obstacles.length = 0;
@@ -522,6 +534,11 @@
         state.billManEndX = 0;
         state.billManX = state.billManMidX;
         state.billManY = world.groundY - 84;
+      }
+      if (state.level === 2) {
+        state.copBossActive = true;
+        state.copBossX = player.x + 260;
+        state.copBossY = world.groundY - 88;
       }
       seedPlatformsForLevel(state.level);
       platforms.push({
@@ -965,6 +982,19 @@
         state.copCarX += (targetX - state.copCarX) * 0.35 * dt;
       }
 
+      if (state.level === 2 && state.copBossActive && state.copBossHp > 0) {
+        const targetDir = player.x > state.copBossX ? 1 : -1;
+        state.copBossX += targetDir * 80 * dt;
+        state.copBossY = world.groundY - 88 - state.copBossJumpOffset;
+        if (state.time - state.copBossJumpTimer >= 3 + Math.random() * 2) {
+          state.copBossJumpTimer = state.time;
+          state.copBossJumpOffset = 34;
+        }
+        if (state.copBossJumpOffset > 0) {
+          state.copBossJumpOffset = Math.max(0, state.copBossJumpOffset - 120 * dt);
+        }
+      }
+
       if (player.x + player.w >= state.levelEndX) {
         winLevel();
         return;
@@ -1194,6 +1224,19 @@
       }
 
       const playerBox = { x: player.x, y: player.y, w: player.w, h: player.h };
+      if (state.copBossActive && state.copBossHp > 0) {
+        const bossBox = {
+          x: state.copBossX - 30,
+          y: state.copBossY,
+          w: 60,
+          h: 88
+        };
+        if (rectsOverlap(playerBox, bossBox)) {
+          state.deathCause = "enemy";
+          die();
+          return;
+        }
+      }
       if (state.copCarActive) {
         const carBox = {
           x: state.copCarX,
@@ -1397,6 +1440,21 @@
                 state.billManStage = 4;
               }
               break;
+            }
+          }
+        }
+      }
+
+      if (state.copBossActive && state.copBossHp > 0) {
+        for (let j = fireballs.length - 1; j >= 0; j -= 1) {
+          const fb = fireballs[j];
+          const dx = state.copBossX - fb.x;
+          const dy = (state.copBossY + 40) - fb.y;
+          if (Math.hypot(dx, dy) < 34 + fb.r) {
+            fireballs.splice(j, 1);
+            state.copBossHp -= 1;
+            if (state.copBossHp <= 0) {
+              state.copBossActive = false;
             }
           }
         }
@@ -1847,6 +1905,30 @@
       ctx.restore();
     }
 
+    function drawCopBoss() {
+      if (!state.copBossActive || state.copBossHp <= 0) return;
+      const screenX = state.copBossX - state.cameraX;
+      const y = state.copBossY;
+      ctx.save();
+      ctx.translate(screenX, y);
+
+      ctx.fillStyle = "#f1d6c7";
+      ctx.beginPath();
+      ctx.arc(30, 16, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1f2a44";
+      ctx.fillRect(12, 28, 36, 42);
+      ctx.fillStyle = "#ff5a4f";
+      ctx.fillRect(18, 38, 24, 10);
+
+      ctx.fillStyle = "#0f0f14";
+      ctx.fillRect(16, 70, 12, 14);
+      ctx.fillRect(36, 70, 12, 14);
+
+      ctx.restore();
+    }
+
     function drawKid() {
       if (!state.kidAlive) return;
       const screenX = state.kidX - state.cameraX;
@@ -2084,6 +2166,7 @@
 
       drawTrapHouse();
       drawCopCar();
+      drawCopBoss();
       drawCourier();
       drawKid();
 
