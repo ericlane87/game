@@ -372,6 +372,8 @@
       billManX: 0,
       billManY: 0,
       billManHp: 10,
+      billManW: 56,
+      billManH: 90,
       billRocketTimer: 0,
       billFollowUpTimer: 0,
       voiceEnabled: true,
@@ -764,10 +766,14 @@
       }
 
       if (state.billManActive) {
-        if (state.time - state.billRocketTimer >= 5) {
+        const targetDir = player.x > state.billManX ? 1 : -1;
+        state.billManX += targetDir * 90 * dt;
+        state.billManY = world.groundY - state.billManH;
+
+        if (state.time - state.billRocketTimer >= 4) {
           billRockets.push({
             x: state.billManX,
-            y: state.billManY + 30,
+            y: state.billManY + 36,
             r: 10,
             vx: player.x > state.billManX ? 260 : -260,
             life: 4
@@ -778,7 +784,7 @@
         if (state.billFollowUpTimer > 0 && state.time >= state.billFollowUpTimer) {
           billFireballs.push({
             x: state.billManX,
-            y: state.billManY + 24,
+            y: state.billManY + 30,
             r: 7,
             vx: player.x > state.billManX ? 320 : -320,
             life: 3
@@ -900,6 +906,19 @@
       }
 
       const playerBox = { x: player.x, y: player.y, w: player.w, h: player.h };
+      if (state.billManActive && state.billManHp > 0) {
+        const bossBox = {
+          x: state.billManX - state.billManW * 0.5,
+          y: state.billManY,
+          w: state.billManW,
+          h: state.billManH
+        };
+        if (rectsOverlap(playerBox, bossBox)) {
+          state.deathCause = "enemy";
+          die();
+          return;
+        }
+      }
       for (let i = obstacles.length - 1; i >= 0; i -= 1) {
         const obs = obstacles[i];
         if (rectsOverlap(playerBox, obs)) {
@@ -981,9 +1000,11 @@
       if (state.billManActive && state.billManHp > 0) {
         for (let j = fireballs.length - 1; j >= 0; j -= 1) {
           const fb = fireballs[j];
-          const dx = state.billManX - fb.x;
-          const dy = (state.billManY + 30) - fb.y;
-          if (Math.hypot(dx, dy) < 30 + fb.r) {
+          const bossCenterX = state.billManX;
+          const bossCenterY = state.billManY + state.billManH * 0.5;
+          const dx = bossCenterX - fb.x;
+          const dy = bossCenterY - fb.y;
+          if (Math.hypot(dx, dy) < 38 + fb.r) {
             fireballs.splice(j, 1);
             state.billManHp -= 1;
             if (state.billManHp <= 0) {
@@ -1306,8 +1327,8 @@
 
     function drawBillMan() {
       if (!state.billManActive || state.billManHp <= 0) return;
-      const w = 50;
-      const h = 84;
+      const w = state.billManW;
+      const h = state.billManH;
       const screenX = state.billManX - state.cameraX;
       const y = state.billManY;
 
