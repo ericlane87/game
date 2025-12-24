@@ -189,6 +189,7 @@
       backdrop-filter: blur(6px);
       text-align: center;
       padding: 24px;
+      z-index: 6;
     }
 
     #overlay.hidden {
@@ -254,6 +255,10 @@
       gap: 10px;
       touch-action: none;
       z-index: 5;
+    }
+
+    .is-dead #touch-controls {
+      display: none;
     }
 
     #action-buttons button,
@@ -695,6 +700,7 @@
       player.standH = player.h;
       player.ducking = false;
       overlay.classList.add("hidden");
+      document.body.classList.remove("is-dead");
       restartBtn.textContent = "New Game";
       state.initialDropTimer = state.level === 1 ? 0 : 3;
       state.copCarTimer = 5;
@@ -886,6 +892,7 @@
         restartBtn.textContent = "New Game";
       }
       overlay.classList.remove("hidden");
+      document.body.classList.add("is-dead");
       if (state.deathCause !== "win") {
         speakDeath();
       }
