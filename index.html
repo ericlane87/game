@@ -600,6 +600,7 @@
     const billFireballs = [];
     const stars = [];
     let hasUserInteracted = false;
+    let loopStarted = false;
 
     function resize() {
       const ratio = window.devicePixelRatio || 1;
@@ -965,6 +966,11 @@
       if (state.lives <= 0) {
         state.lives = Math.min(3, state.maxLives);
         state.level = 1;
+      }
+      if (!loopStarted) {
+        loopStarted = true;
+        state.lastFrame = performance.now();
+        requestAnimationFrame(loop);
       }
       resetGame(state.level);
     }
@@ -3433,7 +3439,6 @@
 
     resize();
     showStartOverlay();
-    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
