@@ -535,11 +535,6 @@
       levelOneAirTimer: 0,
       levelOneAirBurstTimer: 0,
       levelOneTraps: [],
-      housingBossActive: false,
-      housingBossX: 0,
-      housingBossY: 0,
-      housingBossHp: 10,
-      housingBossNextShot: 0,
       beltTimer: 0,
       kidX: 0,
       kidY: 0,
@@ -721,11 +716,6 @@
       state.levelOneAirTimer = 0;
       state.levelOneAirBurstTimer = 0;
       state.levelOneTraps = [];
-      state.housingBossActive = false;
-      state.housingBossX = 0;
-      state.housingBossY = 0;
-      state.housingBossHp = 10;
-      state.housingBossNextShot = 0;
       } else {
         state.billManMidX = state.levelEndX * 0.5 + world.width * 0.6;
         state.billManEndX = 0;
@@ -736,11 +726,6 @@
       state.levelOneAirTimer = 0;
       state.levelOneAirBurstTimer = 0;
       state.levelOneTraps = [];
-      state.housingBossActive = false;
-      state.housingBossX = 0;
-      state.housingBossY = 0;
-      state.housingBossHp = 10;
-      state.housingBossNextShot = 0;
       }
       if (state.level === 2) {
         state.copBossActive = true;
@@ -1449,13 +1434,6 @@
         state.billRocketTimer = state.time;
       }
 
-      if (state.level === 1 && player.x >= state.levelEndX - 700 && !state.housingBossActive) {
-        state.housingBossActive = true;
-        state.housingBossHp = 10;
-        state.housingBossX = state.levelEndX - 520;
-        state.housingBossY = world.groundY - 70;
-        state.housingBossNextShot = state.time + 1 + Math.random() * 4;
-      }
 
       if (state.level === 1 && player.x >= state.levelEndX * 0.5) {
         if (state.time - state.levelOneAirTimer >= 2.4 + Math.random() * 1.2) {
@@ -1479,20 +1457,6 @@
         }
       }
 
-      if (state.housingBossActive) {
-        const targetDir = player.x > state.housingBossX ? 1 : -1;
-        state.housingBossX += targetDir * 40 * dt;
-        if (state.time >= state.housingBossNextShot) {
-          enemyShots.push({
-            x: state.housingBossX,
-            y: player.y + player.h * 0.2,
-            r: 6,
-            vx: targetDir * 260,
-            life: 3
-          });
-          state.housingBossNextShot = state.time + 1 + Math.random() * 4;
-        }
-      }
 
       if (state.level === 1 && state.time - state.levelOneAirBurstTimer >= 10) {
         const spawnX = state.cameraX + world.width + 140;
@@ -1916,20 +1880,6 @@
           return;
         }
       }
-      if (state.housingBossActive && state.housingBossHp > 0) {
-        const bossBox = {
-          x: state.housingBossX - 30,
-          y: state.housingBossY,
-          w: 60,
-          h: 70
-        };
-        if (rectsOverlap(playerBox, bossBox)) {
-          state.deathCause = "enemy";
-          state.deathDetail = "Housing Authority";
-          die();
-          return;
-        }
-      }
       if (state.copCarActive) {
         for (const car of state.copCars) {
           const carBox = {
@@ -2191,21 +2141,6 @@
             if (state.copBossHp <= 0) {
               state.copBossActive = false;
               maybeDropStar(state.copBossX, state.copBossY - 20);
-            }
-          }
-        }
-      }
-      if (state.housingBossActive && state.housingBossHp > 0) {
-        for (let j = fireballs.length - 1; j >= 0; j -= 1) {
-          const fb = fireballs[j];
-          const dx = state.housingBossX - fb.x;
-          const dy = (state.housingBossY + 32) - fb.y;
-          if (Math.hypot(dx, dy) < 34 + fb.r) {
-            fireballs.splice(j, 1);
-            state.housingBossHp -= 1;
-            if (state.housingBossHp <= 0) {
-              state.housingBossActive = false;
-              maybeDropStar(state.housingBossX, state.housingBossY - 20);
             }
           }
         }
