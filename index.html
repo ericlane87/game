@@ -1064,7 +1064,7 @@
         state.lastObstacleX + 280 + Math.random() * 240
       );
       const onPlatformChance = state.level === 1 ? 0.6 : 0.55;
-      const onPlatform = platforms.length && Math.random() < onPlatformChance;
+      const onPlatform = !isHousing && platforms.length && Math.random() < onPlatformChance;
       let y = world.groundY - size;
       let patrolPlat = null;
       if (isHeli || isBird) {
@@ -1083,7 +1083,11 @@
         speed: (isHeli ? 120 : isBird ? 140 : isHousing ? 70 : 90) + state.distance * 0.03 + Math.random() * 35,
         vx: -1,
         phase: Math.random() * Math.PI * 2,
-        hp: isHeli ? 2 + Math.floor(Math.random() * 2) : 1
+        hp: isHeli ? 2 + Math.floor(Math.random() * 2) : 1,
+        housingShooter: isHousing ? Math.random() < 0.5 : false,
+        housingNextShot: isHousing ? state.time + 1 + Math.random() * 2 : 0,
+        housingBurstRemaining: 0,
+        housingBurstTimer: 0
       };
       if (!isHeli && !isBird && !isHousing && onPlatform && patrolPlat) {
         obstacle.patrolMinX = patrolPlat.x;
@@ -1393,6 +1397,8 @@
       }
 
       state.cameraX = Math.max(state.cameraX, player.x - world.width * 0.3);
+      const playerInFrame = player.x + player.w > state.cameraX && player.x < state.cameraX + world.width;
+      const kidInFrame = !state.kidAlive || (state.kidX + 28 > state.cameraX && state.kidX < state.cameraX + world.width);
       if (state.copHitCooldown > 0) {
         state.copHitCooldown = Math.max(0, state.copHitCooldown - dt);
       }
@@ -1717,6 +1723,27 @@
         } else {
           const dir = obs.x > player.x ? -1 : 1;
           obs.x += dir * obs.speed * dt;
+        }
+        if (obs.type === "housing" && obs.housingShooter && playerInFrame && kidInFrame) {
+          if (obs.housingBurstRemaining > 0 && state.time >= obs.housingBurstTimer) {
+            const targetDir = player.x > obs.x ? 1 : -1;
+            const targetY = player.y + player.h * 0.2;
+            enemyShots.push({
+              x: obs.x + obs.w * 0.5,
+              y: targetY,
+              r: 6,
+              vx: targetDir * 260,
+              life: 3
+            });
+            obs.housingBurstRemaining -= 1;
+            obs.housingBurstTimer = state.time + 0.28;
+            if (obs.housingBurstRemaining <= 0) {
+              obs.housingNextShot = state.time + 1 + Math.random() * 3;
+            }
+          } else if (obs.housingBurstRemaining <= 0 && state.time >= obs.housingNextShot) {
+            obs.housingBurstRemaining = 1 + Math.floor(Math.random() * 3);
+            obs.housingBurstTimer = state.time;
+          }
         }
         if (obs.type === "airboss") {
           obs.y += Math.sin(state.time * 1.6 + obs.phase) * 20 * dt;
