@@ -1411,7 +1411,7 @@
         state.copCarActive = false;
         state.copCars.length = 0;
         state.dogsActive = true;
-        state.dogsX = state.cameraX + 40;
+        state.dogsX = Math.min(state.cameraX + 40, player.x - 260);
         state.dogs = Array.from({ length: 5 }, (_, i) => ({
           offset: i * 28,
           y: world.groundY - 28
@@ -1608,7 +1608,7 @@
         state.lastSpawn = state.time;
       }
 
-      if (state.time - state.lastCollectible > (state.level === 1 ? 1.2 + Math.random() * 1.0 : 0.9 + Math.random() * 1.1)) {
+      if (state.time - state.lastCollectible > (state.level === 1 ? 3.6 + Math.random() * 2.8 : 0.9 + Math.random() * 1.1)) {
         spawnCollectible();
         state.lastCollectible = state.time;
       }
