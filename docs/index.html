@@ -528,6 +528,8 @@
       billManMidX: 0,
       billManEndX: 0,
       billManOscPhase: Math.random() * Math.PI * 2,
+      levelOneExtraBillTriggers: [],
+      levelOneExtraBillIndex: 0,
       levelOneBillTriggerX: 0,
       levelOneBillTriggerX2: 0,
       billRocketTimer: 0,
@@ -632,6 +634,8 @@
       state.billManY = 0;
       state.billManHp = 20;
       state.billManOscPhase = Math.random() * Math.PI * 2;
+      state.levelOneExtraBillTriggers = [];
+      state.levelOneExtraBillIndex = 0;
       state.billRocketTimer = 0;
       state.billFollowUpTimer = 0;
       state.billJumpTimer = 0;
@@ -727,6 +731,12 @@
       state.billManActive = false;
       state.billManX = state.billManMidX;
       state.billManY = world.groundY - 84;
+      state.levelOneExtraBillTriggers = [
+        state.levelEndX * 0.3,
+        state.levelEndX * 0.5,
+        state.levelEndX * 0.7
+      ];
+      state.levelOneExtraBillIndex = 0;
       state.levelOneBillTriggerX = 0;
       state.levelOneBillTriggerX2 = 0;
       state.levelOneAirTimer = 0;
@@ -1617,7 +1627,20 @@
         state.lastPlant = state.time;
       }
 
-      if (state.level === 1 && state.billManStage === 2 && !state.billManActive) {
+      if (state.level === 1 && !state.billManActive && state.levelOneExtraBillIndex < state.levelOneExtraBillTriggers.length) {
+        const triggerX = state.levelOneExtraBillTriggers[state.levelOneExtraBillIndex];
+        if (player.x >= triggerX) {
+          state.billManActive = true;
+          state.billManStage = 7;
+          state.billManHp = 8;
+          state.billManOscPhase = Math.random() * Math.PI * 2;
+          state.billManX = Math.max(player.x + world.width * 0.6, triggerX + 120);
+          state.billRocketTimer = state.time;
+          state.levelOneExtraBillIndex += 1;
+        }
+      }
+
+      if (state.level === 1 && state.billManStage === 2 && !state.billManActive && player.x >= state.levelEndX * 0.78) {
         state.billManActive = true;
         state.billManStage = 3;
         state.billManHp = 20;
