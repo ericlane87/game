@@ -746,10 +746,11 @@
         });
         addAccessSteps(platforms[platforms.length - 1]);
       }
+      const mainRowY = world.groundY - 140;
       if (state.level === 1) {
         platforms.push({
           x: player.x + 160,
-          y: world.groundY - 140,
+          y: mainRowY,
           w: 52,
           h: 14,
           isQuestion: true,
@@ -761,7 +762,7 @@
         const step = createPlatform(player.x + 260, world.groundY - 60, 46, 14);
         step.tint = "#c54b4b";
         platforms.push(step);
-        const upper = createPlatform(player.x + 330, world.groundY - 140, 4 * 36, 14);
+        const upper = createPlatform(player.x + 330, mainRowY, 4 * 36, 14);
         platforms.push(upper);
         state.levelOneBillTriggerX = upper.x + upper.w + 40;
         obstacles.push({
@@ -778,7 +779,7 @@
         const step2 = createPlatform(player.x + 540, world.groundY - 60, 46, 14);
         step2.tint = "#c54b4b";
         platforms.push(step2);
-        const upper2 = createPlatform(player.x + 610, world.groundY - 140, 4 * 36, 14);
+        const upper2 = createPlatform(player.x + 610, mainRowY, 4 * 36, 14);
         platforms.push(upper2);
         state.levelOneBillTriggerX2 = upper2.x + upper2.w + 40;
         obstacles.push({
@@ -795,7 +796,7 @@
         const step3 = createPlatform(player.x + 860, world.groundY - 60, 46, 14);
         step3.tint = "#c54b4b";
         platforms.push(step3);
-        const upper3 = createPlatform(player.x + 930, world.groundY - 140, 4 * 36, 14);
+        const upper3 = createPlatform(player.x + 930, mainRowY, 4 * 36, 14);
         platforms.push(upper3);
         obstacles.push({
           x: upper3.x + upper3.w - 34,
@@ -808,19 +809,19 @@
           phase: Math.random() * Math.PI * 2,
           hp: 1
         });
-        const star1 = createPlatform(player.x + 1240, world.groundY - 160, 60, 14);
+        const star1 = createPlatform(player.x + 1240, mainRowY, 60, 14);
         star1.isQuestion = true;
         star1.hasStar = true;
         star1.tint = "#2faa59";
         platforms.push(star1);
         addAccessSteps(star1);
-        const star2 = createPlatform(player.x + 1480, world.groundY - 220, 60, 14);
+        const star2 = createPlatform(player.x + 1480, mainRowY, 60, 14);
         star2.isQuestion = true;
         star2.hasStar = true;
         star2.tint = "#2faa59";
         platforms.push(star2);
         addAccessSteps(star2);
-        const star3 = createPlatform(player.x + 1720, world.groundY - 180, 60, 14);
+        const star3 = createPlatform(player.x + 1720, mainRowY, 60, 14);
         star3.isQuestion = true;
         star3.hasStar = true;
         star3.tint = "#2faa59";
@@ -829,9 +830,9 @@
         seedLevelOneTraps();
 
         const extraPlatforms = [
-          createPlatform(player.x + 2100, world.groundY - 160, 140, 14),
-          createPlatform(player.x + 2380, world.groundY - 220, 160, 14),
-          createPlatform(player.x + 2680, world.groundY - 180, 140, 14)
+          createPlatform(player.x + 2100, mainRowY, 140, 14),
+          createPlatform(player.x + 2380, mainRowY, 160, 14),
+          createPlatform(player.x + 2680, mainRowY, 140, 14)
         ];
         for (const plat of extraPlatforms) {
           platforms.push(plat);
@@ -1154,30 +1155,14 @@
         state.lastCollectibleX = spawnX;
         return;
       }
-      const roll = Math.random();
+      const rowY = world.groundY - 140;
+      const usePlatform = platforms.length && Math.random() < 0.6;
       let y = world.groundY - 46;
-      if (roll < 0.3) {
-        y = world.groundY - 46;
-      } else if (roll < 0.6) {
-        const midPlatforms = platforms.filter((plat) => plat.y >= world.groundY - 200);
-        const target = midPlatforms.length
-          ? midPlatforms[Math.floor(Math.random() * midPlatforms.length)]
-          : null;
-        y = target ? target.y - 24 : world.groundY - 120;
+      if (usePlatform) {
+        const plat = platforms[Math.floor(Math.random() * platforms.length)];
+        y = plat.y - 24;
       } else {
-        const highPlatforms = platforms.filter((plat) => plat.y < world.groundY - 200);
-        let target = highPlatforms.length
-          ? highPlatforms[Math.floor(Math.random() * highPlatforms.length)]
-          : null;
-        if (!target) {
-          const highPlat = createPlatform(spawnX - 40, world.groundY - 260, 120, 14);
-          platforms.push(highPlat);
-          state.lastPlatformX = Math.max(state.lastPlatformX, highPlat.x + highPlat.w);
-          state.lastPlatformY = highPlat.y;
-          addAccessSteps(highPlat);
-          target = highPlat;
-        }
-        y = target.y - 24;
+        y = rowY - 24;
       }
       collectibles.push({
         x: spawnX,
@@ -1190,19 +1175,8 @@
     function spawnPlatform() {
       const w = 140 + Math.random() * 140;
       const h = 14;
-      const yOptions = state.level === 3
-        ? [world.groundY - 160, world.groundY - 240, world.groundY - 320, world.groundY - 400]
-        : state.level === 2
-          ? [world.groundY - 140, world.groundY - 220, world.groundY - 300, world.groundY - 380]
-          : [world.groundY - 120, world.groundY - 200, world.groundY - 280, world.groundY - 340];
-      const minY = world.groundY - 360;
-      const maxY = world.groundY - 120;
-      let y = yOptions[Math.floor(Math.random() * yOptions.length)];
-      if (Math.abs(y - state.lastPlatformY) > 140) {
-        const dir = y > state.lastPlatformY ? 1 : -1;
-        y = state.lastPlatformY + dir * 120;
-      }
-      y = Math.max(minY, Math.min(maxY, y));
+      const rowY = world.groundY - 140;
+      let y = rowY;
       const spawnX = Math.max(
         state.cameraX + world.width + 160,
         state.lastPlatformX + 240 + Math.random() * 220
@@ -1219,7 +1193,7 @@
         state.cameraX + world.width + 120,
         state.lastPlatformX + 140
       );
-      const y = world.groundY - 120;
+      const y = world.groundY - 140;
       const widths = [140, 160, 180];
       for (let i = 0; i < 2; i += 1) {
         const w = widths[Math.floor(Math.random() * widths.length)];
@@ -1233,11 +1207,13 @@
     }
 
     function spawnStairChoice(atX) {
-      const yLow = world.groundY - 120;
+      const yLow = world.groundY - 80;
+      const topY = world.groundY - 140;
       const stepRise = 20;
       const stepWidth = 48;
       for (let i = 0; i < 5; i += 1) {
-        const plat = createPlatform(atX + i * (stepWidth + 6), yLow - i * stepRise, stepWidth, 12);
+        const stepY = Math.max(topY, yLow - i * stepRise);
+        const plat = createPlatform(atX + i * (stepWidth + 6), stepY, stepWidth, 12);
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
         state.lastPlatformY = plat.y;
@@ -1286,17 +1262,11 @@
         ? nearby[Math.floor(Math.random() * nearby.length)]
         : null;
       if (!targetPlat) {
-        const y = state.level >= 2 ? world.groundY - 220 : world.groundY - 200;
+        const y = world.groundY - 140;
         targetPlat = createPlatform(spawnX - 40, y, 120, 14);
         platforms.push(targetPlat);
         state.lastPlatformX = Math.max(state.lastPlatformX, targetPlat.x + targetPlat.w);
         state.lastPlatformY = y;
-      }
-      if (targetPlat.y < world.groundY - 240) {
-        const stepPlat = createPlatform(targetPlat.x - 120, targetPlat.y + 120, 100, 14);
-        platforms.push(stepPlat);
-        state.lastPlatformX = Math.max(state.lastPlatformX, stepPlat.x + stepPlat.w);
-        state.lastPlatformY = stepPlat.y;
       }
       plants.push({
         x: targetPlat.x + targetPlat.w * 0.5,
@@ -1310,11 +1280,7 @@
     function spawnStarPack() {
       const spacing = (state.levelEndX - (player.x + 600)) / 4;
       const baseX = player.x + 520;
-      const yOptions = [
-        world.groundY - 140,
-        world.groundY - 220,
-        world.groundY - 300
-      ];
+      const yOptions = [world.groundY - 140];
       for (let i = 0; i < 3; i += 1) {
         const y = yOptions[i % yOptions.length];
         const plat = createPlatform(baseX + i * spacing, y, 110, 14);
