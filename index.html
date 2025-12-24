@@ -527,6 +527,7 @@
       billManH: 90,
       billManMidX: 0,
       billManEndX: 0,
+      billManOscPhase: Math.random() * Math.PI * 2,
       levelOneBillTriggerX: 0,
       levelOneBillTriggerX2: 0,
       billRocketTimer: 0,
@@ -567,6 +568,7 @@
       copBossFireTimer: 0,
       copBossJumpTimer: 0,
       copBossJumpOffset: 0,
+      copBossOscPhase: Math.random() * Math.PI * 2,
       billLabel: "BILL MAN",
       billShirt: "#2c2b30",
       billSign: "#f6f1e8",
@@ -629,6 +631,7 @@
       state.billManX = 0;
       state.billManY = 0;
       state.billManHp = 20;
+      state.billManOscPhase = Math.random() * Math.PI * 2;
       state.billRocketTimer = 0;
       state.billFollowUpTimer = 0;
       state.billJumpTimer = 0;
@@ -662,6 +665,7 @@
       state.copBossFireTimer = 0;
       state.copBossJumpTimer = 0;
       state.copBossJumpOffset = 0;
+      state.copBossOscPhase = Math.random() * Math.PI * 2;
       state.billLabel = state.level === 2 ? "DFAC" : "BILL MAN";
       const levelConfig = levelConfigs[state.level - 1];
       if (state.level === 2) {
@@ -1527,8 +1531,17 @@
       }
 
       if (state.level === 2 && state.copBossActive && state.copBossHp > 0) {
-        const targetDir = player.x > state.copBossX ? 1 : -1;
-        state.copBossX += targetDir * 80 * dt;
+        const faceDir = player.facing || 1;
+        const minDist = 160;
+        const maxDist = 240;
+        const swing = (Math.sin(state.time * 1.1 + state.copBossOscPhase) + 1) * 0.5;
+        const targetDist = minDist + (maxDist - minDist) * swing;
+        const targetX = player.x + faceDir * targetDist;
+        const dir = targetX > state.copBossX ? 1 : -1;
+        state.copBossX += dir * 80 * dt;
+        if (Math.abs(state.copBossX - player.x) < minDist) {
+          state.copBossX = player.x + faceDir * minDist;
+        }
         state.copBossY = world.groundY - 88 - state.copBossJumpOffset;
         if (state.time - state.copBossFireTimer >= 3) {
           const targetDirFire = player.x > state.copBossX ? 1 : -1;
@@ -1619,8 +1632,17 @@
         if (shouldWait) {
           state.billManX = state.billManEndX;
         } else {
-          const targetDir = player.x > state.billManX ? 1 : -1;
+          const faceDir = player.facing || 1;
+          const minDist = 140;
+          const maxDist = 220;
+          const swing = (Math.sin(state.time * 1.2 + state.billManOscPhase) + 1) * 0.5;
+          const targetDist = minDist + (maxDist - minDist) * swing;
+          const targetX = player.x + faceDir * targetDist;
+          const targetDir = targetX > state.billManX ? 1 : -1;
           state.billManX += targetDir * state.billMoveSpeed * dt;
+          if (Math.abs(state.billManX - player.x) < minDist) {
+            state.billManX = player.x + faceDir * minDist;
+          }
           state.billManY = world.groundY - state.billManH - state.billJumpOffset;
 
           if (state.time - state.billRocketTimer >= state.billFireRate) {
