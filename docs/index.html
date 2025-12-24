@@ -391,7 +391,7 @@
         <h1 id="title">The Adventures of the Yeah, Yeah Man</h1>
         <p id="subtitle">Sprint the block. Dodge roaches. Grab the stash to keep your meter alive.</p>
         <div id="death-reason"></div>
-        <div id="controls">Desktop: A-D to move, Space to jump, left click/F to fire, G for burst, right click for belt. Mobile: D-pad to move/jump, A to shoot, B to release flower power.</div>
+        <div id="controls"></div>
         <button id="restart-btn" type="button">New Game</button>
       </div>
     </div>
@@ -430,9 +430,15 @@
     const dpadDown = document.getElementById("dpad-down");
     const restartBtn = document.getElementById("restart-btn");
     const voiceToggle = document.getElementById("voice-toggle");
+    const controlsText = document.getElementById("controls");
 
     const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     const isDesktop = !isTouch;
+    if (controlsText) {
+      controlsText.textContent = isTouch
+        ? "Mobile: D-pad to move/jump, A to shoot, B to release flower power."
+        : "Desktop: A-D to move, Space to jump, left click/F to fire, G for burst, right click for belt.";
+    }
     const voicePreference = {
       name: "David"
     };
