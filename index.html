@@ -1092,6 +1092,7 @@
         obstacle.speed = 60 + Math.random() * 30;
         obstacle.x = patrolPlat.x + (patrolPlat.w - width) * (0.2 + Math.random() * 0.6);
         obstacle.y = patrolPlat.y - size;
+        obstacle.nextShot = state.time + 1 + Math.random();
       }
       obstacles.push(obstacle);
       state.lastObstacleX = spawnX;
@@ -1710,6 +1711,17 @@
           } else if (obs.x >= obs.patrolMaxX) {
             obs.x = obs.patrolMaxX;
             obs.patrolDir = -1;
+          }
+          if (state.time >= (obs.nextShot || 0)) {
+            enemyShots.push({
+              x: obs.x + obs.w * 0.5,
+              y: obs.y + obs.h + 6,
+              r: 6,
+              vx: 0,
+              vy: 220,
+              life: 3
+            });
+            obs.nextShot = state.time + 1 + Math.random();
           }
         } else {
           const dir = obs.x > player.x ? -1 : 1;
