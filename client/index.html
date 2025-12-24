@@ -377,6 +377,7 @@
     <div id="hud">
       <div id="hud-title">The Adventures of the Yeah, Yeah Man</div>
       <div class="score">Score: <span id="score">0</span></div>
+      <div class="score">Lives: <span id="lives">3/5</span></div>
       <div id="meter" aria-label="Addiction meter">
         <div id="meter-fill"></div>
         <div id="meter-text">100</div>
@@ -415,6 +416,7 @@
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
     const hudScore = document.getElementById("score");
+    const hudLives = document.getElementById("lives");
     const meterFill = document.getElementById("meter-fill");
     const meterText = document.getElementById("meter-text");
     const meterValueLabel = document.getElementById("meter-value");
@@ -496,6 +498,9 @@
     const state = {
       running: false,
       dead: false,
+      awaitingStart: true,
+      lives: 3,
+      maxLives: 5,
       moveSpeed: 240,
       score: 0,
       meter: 100,
@@ -621,6 +626,7 @@
       state.level = nextLevel;
       state.running = true;
       state.dead = false;
+      state.awaitingStart = false;
       state.score = 0;
       state.meter = 100;
       state.time = 0;
@@ -905,20 +911,27 @@
     function die() {
       state.running = false;
       state.dead = true;
+      if (state.deathCause !== "win") {
+        state.lives = Math.max(0, state.lives - 1);
+      }
       const meterValue = Math.max(0, Math.min(100, state.meter));
       let reasonText = "You got caught.";
       if (state.deathCause === "meter") {
         reasonText = "Addiction meter drained.";
       } else if (state.deathCause === "win") {
         reasonText = `Level ${state.level} complete.`;
+      } else if (state.lives <= 0) {
+        reasonText = "Out of lives.";
       } else if (state.deathDetail) {
         reasonText = `Killed by ${state.deathDetail}.`;
       }
       deathReason.textContent = `${reasonText} Meter: ${Math.round(meterValue)}%`;
       if (state.deathCause === "win") {
         restartBtn.textContent = state.level === levelConfigs.length ? "New Game" : "Next Level";
+      } else if (state.lives > 0) {
+        restartBtn.textContent = "Try Again";
       } else {
-        restartBtn.textContent = "New Game";
+        restartBtn.textContent = "Start Over";
       }
       overlay.classList.remove("hidden");
       document.body.classList.add("is-dead");
@@ -928,8 +941,32 @@
     }
 
     function winLevel() {
+      state.lives = Math.min(state.maxLives, state.lives + 1);
       state.deathCause = "win";
       die();
+    }
+
+    function showStartOverlay() {
+      state.running = false;
+      state.dead = false;
+      state.awaitingStart = true;
+      state.lives = Math.min(3, state.maxLives);
+      state.level = 1;
+      state.deathCause = "";
+      state.deathDetail = "";
+      deathReason.textContent = "Click, tap, or press Space to start.";
+      restartBtn.textContent = "Start";
+      overlay.classList.remove("hidden");
+      document.body.classList.remove("is-dead");
+    }
+
+    function startGame() {
+      if (state.running || state.dead) return;
+      if (state.lives <= 0) {
+        state.lives = Math.min(3, state.maxLives);
+        state.level = 1;
+      }
+      resetGame(state.level);
     }
 
     function queueJump() {
@@ -1019,7 +1056,7 @@
       const dir = player.facing || 1;
       fireballs.push({
         x: player.x + player.w * 0.6,
-        y: player.y + player.h * 0.4,
+        y: getDuckableShotY(),
         r: 8,
         vx: dir * 520,
         vy: 0,
@@ -1033,20 +1070,22 @@
       if (state.dead || !state.running) return;
       if (state.burstCharges <= 0) return;
       const baseX = player.x + player.w * 0.6;
-      const baseY = player.y + player.h * 0.4;
+      const baseY = getDuckableShotY();
       const angles = [-Math.PI / 2, -Math.PI / 6, -Math.PI / 3, Math.PI / 6, Math.PI / 3, Math.PI / 2];
       const speed = 380;
-      angles.forEach((angle) => {
-        fireballs.push({
-          x: baseX,
-          y: baseY,
-          r: 9,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          life: 1.4,
-          type: "burst"
+      for (let volley = 0; volley < 2; volley += 1) {
+        angles.forEach((angle) => {
+          fireballs.push({
+            x: baseX,
+            y: baseY,
+            r: 9,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.4,
+            type: "burst"
+          });
         });
-      });
+      }
       state.burstCharges = Math.max(0, state.burstCharges - 1);
     }
 
@@ -2106,6 +2145,18 @@
 
       for (let i = enemyShots.length - 1; i >= 0; i -= 1) {
         const shot = enemyShots[i];
+        for (let j = fireballs.length - 1; j >= 0; j -= 1) {
+          const fb = fireballs[j];
+          if (Math.hypot(shot.x - fb.x, shot.y - fb.y) < shot.r + fb.r + 4) {
+            enemyShots.splice(i, 1);
+            fireballs.splice(j, 1);
+            break;
+          }
+        }
+      }
+
+      for (let i = enemyShots.length - 1; i >= 0; i -= 1) {
+        const shot = enemyShots[i];
         if (player.ducking && shot.y < player.y + player.h * 0.25) {
           continue;
         }
@@ -3110,6 +3161,9 @@
       draw();
 
       hudScore.textContent = Math.floor(state.score).toString();
+      if (hudLives) {
+        hudLives.textContent = `${state.lives}/${state.maxLives}`;
+      }
       const meterValue = Math.max(0, Math.min(100, state.meter));
       meterFill.style.width = `${meterValue}%`;
       meterText.textContent = `${Math.round(meterValue)}%`;
@@ -3160,6 +3214,11 @@
     window.addEventListener("keydown", (event) => {
       hasUserInteracted = true;
       if (event.code === "Space" || event.code === "ArrowUp" || event.code === "KeyW") {
+        if (event.code === "Space" && state.awaitingStart) {
+          event.preventDefault();
+          startGame();
+          return;
+        }
         event.preventDefault();
         queueJump();
         if (!state.spokenStart && state.running && !state.dead) {
@@ -3212,6 +3271,13 @@
       event.preventDefault();
     });
 
+    overlay.addEventListener("pointerdown", (event) => {
+      if (!state.awaitingStart) return;
+      event.preventDefault();
+      hasUserInteracted = true;
+      startGame();
+    }, { passive: false });
+
     canvas.addEventListener("mousedown", (event) => {
       if (event.button === 2) {
         hasUserInteracted = true;
@@ -3253,11 +3319,20 @@
     if (restartBtn) {
       restartBtn.addEventListener("click", () => {
         hasUserInteracted = true;
+        if (state.awaitingStart) {
+          startGame();
+          return;
+        }
         if (state.deathCause === "win") {
           const nextLevel = state.level >= levelConfigs.length ? 1 : state.level + 1;
           resetGame(nextLevel);
         } else {
-          resetGame(state.level);
+          if (state.lives > 0) {
+            resetGame(state.level);
+          } else {
+            state.lives = Math.min(3, state.maxLives);
+            resetGame(1);
+          }
         }
       });
     }
@@ -3357,7 +3432,7 @@
     }
 
     resize();
-    resetGame();
+    showStartOverlay();
     requestAnimationFrame(loop);
   </script>
 </body>
