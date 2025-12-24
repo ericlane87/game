@@ -640,6 +640,12 @@
       state.kidBurstCount = 0;
       state.invincibleTimer = 0;
       state.plantsSpawned = 0;
+      input.left = false;
+      input.right = false;
+      input.down = false;
+      input.jumpQueued = false;
+      input.fireQueued = false;
+      input.beltQueued = false;
       state.copCarActive = false;
       state.copCars = [];
       state.copCarTimer = 0;
@@ -1328,6 +1334,11 @@
       );
     }
 
+    function getDuckableShotY() {
+      const standTop = player.y - (player.standH - player.h);
+      return standTop + player.standH * 0.15;
+    }
+
 
     function update(dt) {
       if (!state.running) return;
@@ -1500,7 +1511,7 @@
         state.copBossY = world.groundY - 88 - state.copBossJumpOffset;
         if (state.time - state.copBossFireTimer >= 3) {
           const targetDirFire = player.x > state.copBossX ? 1 : -1;
-          const targetY = player.y + player.h * 0.2;
+          const targetY = getDuckableShotY();
           enemyShots.push({
             x: state.copBossX,
             y: targetY,
@@ -1589,7 +1600,7 @@
           state.billManY = world.groundY - state.billManH - state.billJumpOffset;
 
           if (state.time - state.billRocketTimer >= state.billFireRate) {
-            const targetY = player.y + player.h * 0.5;
+            const targetY = getDuckableShotY();
             billRockets.push({
               x: state.billManX,
               y: targetY,
@@ -1601,7 +1612,7 @@
             state.billFollowUpTimer = state.time + state.billFollowUp;
           }
           if (state.billFollowUpTimer > 0 && state.time >= state.billFollowUpTimer) {
-            const targetY = player.y + player.h * 0.5;
+            const targetY = getDuckableShotY();
             billFireballs.push({
               x: state.billManX,
               y: targetY,
@@ -1627,7 +1638,7 @@
         if (helis.length) {
           const shooter = helis[Math.floor(Math.random() * helis.length)];
           const targetDir = player.x > shooter.x ? 1 : -1;
-          const targetY = player.y + player.h * 0.2;
+          const targetY = getDuckableShotY();
           enemyShots.push({
             x: shooter.x,
             y: targetY,
@@ -1660,7 +1671,7 @@
         if (birds.length) {
           const shooter = birds[Math.floor(Math.random() * birds.length)];
           const targetDir = player.x > shooter.x ? 1 : -1;
-          const targetY = player.y + player.h * 0.2;
+          const targetY = getDuckableShotY();
           enemyShots.push({
             x: shooter.x,
             y: targetY,
@@ -1700,7 +1711,7 @@
         if (obs.type === "housing" && obs.housingShooter && playerInFrame && kidInFrame) {
           if (obs.housingBurstRemaining > 0 && state.time >= obs.housingBurstTimer) {
             const targetDir = player.x > obs.x ? 1 : -1;
-            const targetY = player.y + player.h * 0.2;
+            const targetY = getDuckableShotY();
             enemyShots.push({
               x: obs.x + obs.w * 0.5,
               y: targetY,
@@ -3047,6 +3058,15 @@
       }
     });
 
+    window.addEventListener("blur", () => {
+      input.left = false;
+      input.right = false;
+      input.down = false;
+      input.jumpQueued = false;
+      input.fireQueued = false;
+      input.beltQueued = false;
+    });
+
     canvas.addEventListener("contextmenu", (event) => {
       event.preventDefault();
     });
@@ -3150,6 +3170,9 @@
           event.preventDefault();
           hasUserInteracted = true;
           dpadPointerId = event.pointerId;
+          if (dpad.setPointerCapture) {
+            dpad.setPointerCapture(event.pointerId);
+          }
           updateDpadFromPoint(event.clientX, event.clientY);
         }, { passive: false });
         dpad.addEventListener("pointermove", (event) => {
@@ -3160,6 +3183,9 @@
         const clearDpad = (event) => {
           if (event.pointerId !== dpadPointerId) return;
           event.preventDefault();
+          if (dpad.releasePointerCapture && dpad.hasPointerCapture && dpad.hasPointerCapture(event.pointerId)) {
+            dpad.releasePointerCapture(event.pointerId);
+          }
           dpadPointerId = null;
           input.left = false;
           input.right = false;
@@ -3168,6 +3194,8 @@
         };
         dpad.addEventListener("pointerup", clearDpad, { passive: false });
         dpad.addEventListener("pointercancel", clearDpad, { passive: false });
+        window.addEventListener("pointerup", clearDpad, { passive: false });
+        window.addEventListener("pointercancel", clearDpad, { passive: false });
       }
 
       if (fireBtn) {
