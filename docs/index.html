@@ -528,6 +528,7 @@
       billManMidX: 0,
       billManEndX: 0,
       billManOscPhase: Math.random() * Math.PI * 2,
+      billManIntroShotFired: false,
       levelOneExtraBillTriggers: [],
       levelOneExtraBillIndex: 0,
       levelOneBillTriggerX: 0,
@@ -634,6 +635,7 @@
       state.billManY = 0;
       state.billManHp = 20;
       state.billManOscPhase = Math.random() * Math.PI * 2;
+      state.billManIntroShotFired = false;
       state.levelOneExtraBillTriggers = [];
       state.levelOneExtraBillIndex = 0;
       state.billRocketTimer = 0;
@@ -731,6 +733,7 @@
       state.billManActive = false;
       state.billManX = state.billManMidX;
       state.billManY = world.groundY - 84;
+      state.billManIntroShotFired = false;
       state.levelOneExtraBillTriggers = [
         state.levelEndX * 0.3,
         state.levelEndX * 0.5,
@@ -1505,6 +1508,7 @@
         state.billManHp = 6;
         state.billManX = player.x + world.width * 0.6;
         state.billRocketTimer = state.time;
+        state.billManIntroShotFired = false;
         state.levelOneBillTriggerX = Number.POSITIVE_INFINITY;
       }
 
@@ -1636,6 +1640,7 @@
           state.billManOscPhase = Math.random() * Math.PI * 2;
           state.billManX = Math.max(player.x + world.width * 0.6, triggerX + 120);
           state.billRocketTimer = state.time;
+          state.billManIntroShotFired = false;
           state.levelOneExtraBillIndex += 1;
         }
       }
@@ -1646,6 +1651,7 @@
         state.billManHp = 20;
         state.billManX = state.billManEndX;
         state.billRocketTimer = state.time;
+        state.billManIntroShotFired = false;
       }
 
       if (state.billManActive) {
@@ -1655,6 +1661,20 @@
         if (shouldWait) {
           state.billManX = state.billManEndX;
         } else {
+          const billManInFrame = state.billManX + state.billManW > state.cameraX
+            && state.billManX - state.billManW < state.cameraX + world.width;
+          if (!state.billManIntroShotFired && playerInFrame && billManInFrame) {
+            billFireballs.push({
+              x: state.billManX,
+              y: getDuckableShotY(),
+              r: 7,
+              vx: player.x > state.billManX ? 320 : -320,
+              life: 3
+            });
+            state.billManIntroShotFired = true;
+            state.billRocketTimer = state.time;
+            state.billFollowUpTimer = 0;
+          }
           const faceDir = player.facing || 1;
           const minDist = 140;
           const maxDist = 220;
