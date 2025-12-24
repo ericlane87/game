@@ -770,7 +770,8 @@
           isQuestion: true,
           used: false,
           hasStar: true,
-          spawnsPlant: true
+          spawnsPlant: true,
+          tint: "#2faa59"
         });
         const step = createPlatform(player.x + 260, world.groundY - 60, 46, 14);
         step.tint = "#c54b4b";
@@ -1104,20 +1105,24 @@
         obstacle.patrolMaxX = Math.max(patrolPlat.x, patrolPlat.x + patrolPlat.w - width);
         obstacle.patrolDir = Math.random() < 0.5 ? -1 : 1;
         obstacle.speed = 60 + Math.random() * 30;
+        obstacle.x = patrolPlat.x + (patrolPlat.w - width) * (0.2 + Math.random() * 0.6);
+        obstacle.y = patrolPlat.y - size;
       }
       obstacles.push(obstacle);
       state.lastObstacleX = spawnX;
     }
 
     function createPlatform(x, y, w, h) {
+      const isQuestion = state.level === 1 ? false : Math.random() < 0.18;
       return {
         x,
         y,
         w,
         h,
-        isQuestion: Math.random() < 0.18,
+        isQuestion,
         used: false,
-        hasStar: false
+        hasStar: false,
+        tint: state.level === 1 ? "#c54b4b" : undefined
       };
     }
 
@@ -1239,8 +1244,10 @@
 
     function spawnStairChoice(atX) {
       const yLow = world.groundY - 120;
-      for (let i = 0; i < 4; i += 1) {
-        const plat = createPlatform(atX + i * 60, yLow - i * 40, 60, 14);
+      const stepRise = 20;
+      const stepWidth = 48;
+      for (let i = 0; i < 5; i += 1) {
+        const plat = createPlatform(atX + i * (stepWidth + 6), yLow - i * stepRise, stepWidth, 12);
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
         state.lastPlatformY = plat.y;
