@@ -505,6 +505,7 @@
       collectMessageTimer: 0,
       fireMessageTimer: 0,
       deathCause: "",
+      deathDetail: "",
       initialDropTimer: 0,
       starsSpawned: 0,
       level: 1,
@@ -548,6 +549,7 @@
       kidBurstTimer: 0,
       kidBurstCount: 0,
       lastPlant: 0,
+      plantsSpawned: 0,
       invincibleTimer: 0,
       copCarActive: false,
       copCars: [],
@@ -637,6 +639,7 @@
       state.kidBurstTimer = 0;
       state.kidBurstCount = 0;
       state.invincibleTimer = 0;
+      state.plantsSpawned = 0;
       state.copCarActive = false;
       state.copCars = [];
       state.copCarTimer = 0;
@@ -679,6 +682,7 @@
         state.billJumpRate = 4.5;
       }
       state.spokenStart = false;
+      state.deathDetail = "";
       obstacles.length = 0;
       platforms.length = 0;
       collectibles.length = 0;
@@ -880,13 +884,14 @@
       state.running = false;
       state.dead = true;
       const meterValue = Math.max(0, Math.min(100, state.meter));
-      const reasonText = state.deathCause === "meter"
-        ? "Addiction meter drained."
-        : state.deathCause === "win"
-          ? `Level ${state.level} complete.`
-        : state.deathCause === "enemy"
-            ? "You got caught."
-            : "You got caught.";
+      let reasonText = "You got caught.";
+      if (state.deathCause === "meter") {
+        reasonText = "Addiction meter drained.";
+      } else if (state.deathCause === "win") {
+        reasonText = `Level ${state.level} complete.`;
+      } else if (state.deathDetail) {
+        reasonText = `Killed by ${state.deathDetail}.`;
+      }
       deathReason.textContent = `${reasonText} Meter: ${Math.round(meterValue)}%`;
       if (state.deathCause === "win") {
         restartBtn.textContent = state.level === levelConfigs.length ? "New Game" : "Next Level";
@@ -1254,11 +1259,13 @@
 
 
     function seedStartPlant() {
+      if (state.plantsSpawned >= 3) return;
       plants.push({
         x: player.x + 160,
         y: world.groundY - 60,
         r: 14
       });
+      state.plantsSpawned += 1;
     }
 
     function seedLevelOneTraps() {
@@ -1270,6 +1277,7 @@
 
     function spawnPlant() {
       if (state.level === 1) return;
+      if (state.plantsSpawned >= 3) return;
       const spawnX = Math.max(
         state.cameraX + world.width + 220,
         state.lastCollectibleX + 320 + Math.random() * 260
@@ -1298,6 +1306,7 @@
         y: targetPlat.y - 24,
         r: 14
       });
+      state.plantsSpawned += 1;
       state.lastCollectibleX = spawnX;
     }
 
@@ -1895,6 +1904,7 @@
         };
         if (rectsOverlap(playerBox, bossBox)) {
           state.deathCause = "enemy";
+          state.deathDetail = "Cop boss";
           die();
           return;
         }
@@ -1908,6 +1918,7 @@
         };
         if (rectsOverlap(playerBox, bossBox)) {
           state.deathCause = "enemy";
+          state.deathDetail = "Housing Authority";
           die();
           return;
         }
@@ -1922,6 +1933,7 @@
           };
           if (rectsOverlap(playerBox, carBox)) {
             state.deathCause = "enemy";
+            state.deathDetail = "Cop car";
             die();
             return;
           }
@@ -1938,6 +1950,7 @@
           };
           if (rectsOverlap(playerBox, dogBox)) {
             state.deathCause = "enemy";
+            state.deathDetail = "Police dogs";
             die();
             return;
           }
@@ -1966,9 +1979,10 @@
               state.billManStage = 4;
             }
           } else {
-          state.deathCause = "enemy";
-          die();
-          return;
+            state.deathCause = "enemy";
+            state.deathDetail = "Bill man";
+            die();
+            return;
           }
         }
       }
@@ -2013,6 +2027,7 @@
             break;
           } else {
             state.deathCause = "enemy";
+            state.deathDetail = "Fireball";
             die();
             break;
           }
@@ -2059,6 +2074,7 @@
             break;
           } else {
             state.deathCause = "enemy";
+            state.deathDetail = "Rocket";
             die();
             break;
           }
@@ -2085,6 +2101,7 @@
             break;
           } else {
             state.deathCause = "enemy";
+            state.deathDetail = "Bill fireball";
             die();
             break;
           }
@@ -2109,11 +2126,14 @@
             obs.hp -= 1;
             if (obs.hp <= 0) {
               if (Math.random() < 0.2) {
-                plants.push({
-                  x: obs.x + obs.w * 0.5,
-                  y: obs.y - 8,
-                  r: 12
-                });
+                if (state.plantsSpawned < 3) {
+                  plants.push({
+                    x: obs.x + obs.w * 0.5,
+                    y: obs.y - 8,
+                    r: 12
+                  });
+                  state.plantsSpawned += 1;
+                }
               }
               maybeDropStar(obs.x + obs.w * 0.5, obs.y - 20);
               obstacles.splice(i, 1);
