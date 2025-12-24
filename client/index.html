@@ -752,7 +752,7 @@
           y: world.groundY - 140,
           w: 90,
           h: 14,
-          isQuestion: true,
+          isQuestion: false,
           used: false,
           hasStar: false
         });
@@ -1117,7 +1117,7 @@
     }
 
     function createPlatform(x, y, w, h) {
-      const isQuestion = state.level === 1 ? false : Math.random() < 0.18;
+      const isQuestion = false;
       return {
         x,
         y,
@@ -1126,7 +1126,7 @@
         isQuestion,
         used: false,
         hasStar: false,
-        tint: state.level === 1 ? "#c54b4b" : undefined
+        tint: "#c54b4b"
       };
     }
 
@@ -1199,6 +1199,26 @@
       state.lastPlatformX = spawnX;
       state.lastPlatformY = y;
       addAccessSteps(plat);
+      if (Math.random() < 0.5) {
+        const obsW = 34;
+        const obsH = 30;
+        const obstacle = {
+          x: plat.x + (plat.w - obsW) * (0.2 + Math.random() * 0.6),
+          y: plat.y - obsH,
+          w: obsW,
+          h: obsH,
+          type: "roach",
+          speed: 60 + Math.random() * 30,
+          vx: -1,
+          phase: Math.random() * Math.PI * 2,
+          hp: 1,
+          patrolMinX: plat.x,
+          patrolMaxX: Math.max(plat.x, plat.x + plat.w - obsW),
+          patrolDir: Math.random() < 0.5 ? -1 : 1,
+          nextShot: state.time + 1 + Math.random()
+        };
+        obstacles.push(obstacle);
+      }
     }
 
     function spawnLowPlatformChain() {
@@ -1300,6 +1320,7 @@
         plat.isQuestion = true;
         plat.used = false;
         plat.hasStar = true;
+        plat.tint = "#2faa59";
         platforms.push(plat);
         state.lastPlatformX = Math.max(state.lastPlatformX, plat.x + plat.w);
         addAccessSteps(plat);
@@ -1544,7 +1565,7 @@
         spawnLowPlatformChain();
         state.lastPlatform = state.time;
       }
-      if (state.level === 1 && !nearEnd && state.time - state.lastPlatform > 2.4 && Math.random() < 0.4) {
+      if (!nearEnd && state.time - state.lastPlatform > 2.4 && Math.random() < 0.35) {
         spawnStairChoice(state.cameraX + world.width + 220);
         state.lastPlatform = state.time;
       }
@@ -1570,7 +1591,10 @@
         state.lastSpawn = state.time;
       }
 
-      if (state.time - state.lastCollectible > (state.level === 1 ? 3.6 + Math.random() * 2.8 : 0.9 + Math.random() * 1.1)) {
+      const collectibleInterval = state.level === 1
+        ? 3.6 + Math.random() * 2.8
+        : 2.2 + Math.random() * 2.0;
+      if (state.time - state.lastCollectible > collectibleInterval) {
         spawnCollectible();
         state.lastCollectible = state.time;
       }
