@@ -1380,6 +1380,7 @@
 
     function update(dt) {
       if (!state.running) return;
+      if (!Number.isFinite(dt) || dt <= 0) return;
 
       state.time += dt;
       const moveDir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
@@ -1897,6 +1898,45 @@
         if (billFireballs[i].life <= 0 || billFireballs[i].x < cleanupX || billFireballs[i].x > state.cameraX + world.width + 200) {
           billFireballs.splice(i, 1);
         }
+      }
+
+      const caps = {
+        platforms: 80,
+        obstacles: 120,
+        collectibles: 80,
+        plants: 12,
+        fireballs: 80,
+        enemyShots: 90,
+        billRockets: 30,
+        billFireballs: 30,
+        stars: 12
+      };
+      if (platforms.length > caps.platforms) {
+        platforms.splice(0, platforms.length - caps.platforms);
+      }
+      if (obstacles.length > caps.obstacles) {
+        obstacles.splice(0, obstacles.length - caps.obstacles);
+      }
+      if (collectibles.length > caps.collectibles) {
+        collectibles.splice(0, collectibles.length - caps.collectibles);
+      }
+      if (plants.length > caps.plants) {
+        plants.splice(0, plants.length - caps.plants);
+      }
+      if (fireballs.length > caps.fireballs) {
+        fireballs.splice(0, fireballs.length - caps.fireballs);
+      }
+      if (enemyShots.length > caps.enemyShots) {
+        enemyShots.splice(0, enemyShots.length - caps.enemyShots);
+      }
+      if (billRockets.length > caps.billRockets) {
+        billRockets.splice(0, billRockets.length - caps.billRockets);
+      }
+      if (billFireballs.length > caps.billFireballs) {
+        billFireballs.splice(0, billFireballs.length - caps.billFireballs);
+      }
+      if (stars.length > caps.stars) {
+        stars.splice(0, stars.length - caps.stars);
       }
 
       const prevY = player.y;
