@@ -2154,6 +2154,9 @@
           const dy = bossCenterY - fb.y;
           if (Math.hypot(dx, dy) < 38 + fb.r) {
             fireballs.splice(j, 1);
+            if (Math.random() < 0.3) {
+              break;
+            }
             state.billManHp -= 1;
             if (state.billManHp <= 0) {
               state.billManActive = false;
@@ -2181,6 +2184,9 @@
           const dy = (state.copBossY + 40) - fb.y;
           if (Math.hypot(dx, dy) < 34 + fb.r) {
             fireballs.splice(j, 1);
+            if (Math.random() < 0.3) {
+              break;
+            }
             state.copBossHp -= 1;
             if (state.copBossHp <= 0) {
               state.copBossActive = false;
