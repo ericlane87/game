@@ -1412,12 +1412,8 @@
       if (state.copCarActive && player.x >= state.levelEndX * 0.5) {
         state.copCarActive = false;
         state.copCars.length = 0;
-        state.dogsActive = true;
-        state.dogsX = Math.min(state.cameraX + 40, player.x - 260);
-        state.dogs = Array.from({ length: 5 }, (_, i) => ({
-          offset: i * 28,
-          y: world.groundY - 28
-        }));
+        state.dogsActive = false;
+        state.dogs.length = 0;
       }
 
       if (state.level === 2 && state.billManStage === 0 && player.x >= state.billManMidX - world.width * 0.9) {
@@ -1515,13 +1511,8 @@
     }
 
       if (state.dogsActive) {
-        const targetX = player.x - 120;
-        const step = 210 * dt;
-        if (state.dogsX < targetX) {
-          state.dogsX = Math.min(targetX, state.dogsX + step);
-        } else {
-          state.dogsX = Math.max(targetX, state.dogsX - step);
-        }
+        state.dogsActive = false;
+        state.dogs.length = 0;
       }
 
       if (state.level === 2 && state.copBossActive && state.copBossHp > 0) {
@@ -1909,22 +1900,6 @@
         }
       }
 
-      if (state.dogsActive) {
-        for (const dog of state.dogs) {
-          const dogBox = {
-            x: state.dogsX + dog.offset,
-            y: dog.y,
-            w: 24,
-            h: 20
-          };
-          if (rectsOverlap(playerBox, dogBox)) {
-            state.deathCause = "enemy";
-            state.deathDetail = "Police dogs";
-            die();
-            return;
-          }
-        }
-      }
       const kidBox = {
         x: state.kidX,
         y: state.kidY,
