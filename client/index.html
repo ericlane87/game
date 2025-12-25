@@ -1952,7 +1952,7 @@
       }
 
       const caps = {
-        platforms: 80,
+        platforms: 200,
         obstacles: 120,
         collectibles: 80,
         plants: 12,
@@ -1963,6 +1963,7 @@
         stars: 12
       };
       if (platforms.length > caps.platforms) {
+        platforms.sort((a, b) => a.x - b.x);
         platforms.splice(0, platforms.length - caps.platforms);
       }
       if (obstacles.length > caps.obstacles) {
