@@ -496,6 +496,7 @@
     const state = {
       running: false,
       dead: false,
+      awaitingStart: true,
       moveSpeed: 240,
       score: 0,
       meter: 100,
@@ -595,6 +596,7 @@
     const billFireballs = [];
     const stars = [];
     let hasUserInteracted = false;
+    let loopStarted = false;
 
     function resize() {
       const ratio = window.devicePixelRatio || 1;
@@ -932,6 +934,29 @@
       die();
     }
 
+    function showStartOverlay() {
+      state.running = false;
+      state.dead = false;
+      state.awaitingStart = true;
+      state.deathCause = "";
+      state.deathDetail = "";
+      deathReason.textContent = "Click, tap, or press Space to start.";
+      restartBtn.textContent = "Start";
+      overlay.classList.remove("hidden");
+      document.body.classList.remove("is-dead");
+    }
+
+    function startGame() {
+      if (state.running || state.dead) return;
+      if (!loopStarted) {
+        loopStarted = true;
+        state.lastFrame = performance.now();
+        requestAnimationFrame(loop);
+      }
+      state.awaitingStart = false;
+      resetGame(state.level);
+    }
+
     function queueJump() {
       input.jumpQueued = true;
     }
@@ -1001,6 +1026,7 @@
 
     function handleJump() {
       if (state.dead || !state.running) {
+        if (state.awaitingStart) return;
         resetGame();
         return;
       }
@@ -3160,6 +3186,11 @@
     window.addEventListener("keydown", (event) => {
       hasUserInteracted = true;
       if (event.code === "Space" || event.code === "ArrowUp" || event.code === "KeyW") {
+        if (event.code === "Space" && state.awaitingStart) {
+          event.preventDefault();
+          startGame();
+          return;
+        }
         event.preventDefault();
         queueJump();
         if (!state.spokenStart && state.running && !state.dead) {
@@ -3212,6 +3243,13 @@
       event.preventDefault();
     });
 
+    overlay.addEventListener("pointerdown", (event) => {
+      if (!state.awaitingStart) return;
+      event.preventDefault();
+      hasUserInteracted = true;
+      startGame();
+    }, { passive: false });
+
     canvas.addEventListener("mousedown", (event) => {
       if (event.button === 2) {
         hasUserInteracted = true;
@@ -3253,6 +3291,10 @@
     if (restartBtn) {
       restartBtn.addEventListener("click", () => {
         hasUserInteracted = true;
+        if (state.awaitingStart) {
+          startGame();
+          return;
+        }
         if (state.deathCause === "win") {
           const nextLevel = state.level >= levelConfigs.length ? 1 : state.level + 1;
           resetGame(nextLevel);
@@ -3357,8 +3399,7 @@
     }
 
     resize();
-    resetGame();
-    requestAnimationFrame(loop);
+    showStartOverlay();
   </script>
 </body>
 </html>
